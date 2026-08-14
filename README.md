@@ -1,5 +1,7 @@
 # Silent Caption
 
+[![CI/CD](https://github.com/ekkus93/android-subtitles-anywhere/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ekkus93/android-subtitles-anywhere/actions/workflows/ci.yml)
+
 Silent Caption is an Android-first, local speech-to-text layer for media audio. The prototype routes phone media to an ESP32-WROOM-32 A2DP sink, returns digital audio over the board's onboard USB-UART interface, and captions it through a portable Rust core.
 
 The authoritative v0.1 architecture and execution plan are:
@@ -41,6 +43,12 @@ idf.py -C firmware build
 ### Android
 
 The exact Gradle commands will be added when SC-004 creates and pins the Android project.
+
+## CI/CD and release assets
+
+GitHub Actions runs baseline validation for pushes to `master`, pull requests targeting `master`, and manual workflow dispatches. Normal CI runs do not upload workflow artifacts.
+
+Release assets are created only for version tags matching the `v*` trigger and validated as semantic-version-style tags such as `v0.1.0`. A tagged run publishes a GitHub Release containing a source archive and `SHA256SUMS`. Android APK/AAB and ESP32 firmware release assets will be added to this tag-only release job when those build targets are established.
 
 ## Engineering rules
 
