@@ -33,9 +33,11 @@ cargo test --manifest-path core/Cargo.toml --all-features
 
 ### ESP-IDF firmware
 
-Install/activate the repository-pinned ESP-IDF version once SC-003 records it, then:
+ESP-IDF is pinned in `firmware/IDF_VERSION`; setup details and the upgrade policy are in `docs/ESP_IDF_TOOLCHAIN.md`.
 
 ```sh
+./scripts/install-esp-idf.sh
+. "$HOME/.espressif/frameworks/esp-idf-v5.5.5/export.sh"
 idf.py -C firmware set-target esp32
 idf.py -C firmware build
 ```
