@@ -1,0 +1,80 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust toolchain
+        run: rustup show
+      - name: Check formatting
+        run: cargo fmt --manifest-path core/Cargo.toml --all -- --check
+      - name: Clippy
+        run: cargo clippy --manifest-path core/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Unit tests
+        run: cargo test --manifest-path core/Cargo.toml --all-features --locked
+
+  repository-policy:
+    name: Repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject committed build products
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)(target|build)/|\.apk$|\.aab$|\.elf$|\.bin$' ; then
+            echo 'Tracked build/release product detected.' >&2
+            exit 1
+          fi
+      - name: Check whitespace
+        run: git diff --check HEAD^
+
+  release-assets:
+    name: Tagged release assets
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [rust, repository-policy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+      - name: Build source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=tar.gz --prefix="android-subtitles-anywhere-${GITHUB_REF_NAME}/" \
+            -o "android-subtitles-anywhere-${GITHUB_REF_NAME}.tar.gz" HEAD
+          sha256sum "android-subtitles-anywhere-${GITHUB_REF_NAME}.tar.gz" > SHA256SUMS
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" \
+            "android-subtitles-anywhere-${GITHUB_REF_NAME}.tar.gz" SHA256SUMS \
+            --verify-tag \
+            --generate-notes \
+            --title "${GITHUB_REF_NAME}"
