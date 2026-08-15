@@ -123,7 +123,10 @@ fn generated_fixture_injects_without_hardware() {
 #[test]
 fn normalization_and_error_rates_are_deterministic() {
     assert_eq!(normalize_transcript("Hello,  WORLD!"), "hello world");
-    assert_eq!(word_error_rate("one two three", "one four three"), 1.0 / 3.0);
+    assert_eq!(
+        word_error_rate("one two three", "one four three"),
+        1.0 / 3.0
+    );
     assert_eq!(character_error_rate("abc", "adc"), 1.0 / 3.0);
 }
 
@@ -170,7 +173,10 @@ fn unload_and_model_switch_style_lifecycle_is_explicit() {
     first.load().unwrap();
     first.start_session(1).unwrap();
     first.unload();
-    assert_eq!(first.set_language(LanguagePolicy::Auto), Err(AsrError::NotLoaded));
+    assert_eq!(
+        first.set_language(LanguagePolicy::Auto),
+        Err(AsrError::NotLoaded)
+    );
 
     let mut replacement = FakeBackend::default();
     replacement.load().unwrap();
