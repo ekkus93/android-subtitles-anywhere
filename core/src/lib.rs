@@ -3,9 +3,9 @@
 //! Android and future iOS clients consume this crate through an FFI boundary.
 //! Platform-specific USB, UI, and lifecycle APIs do not belong here.
 
-pub mod asr {}
+pub mod asr;
 pub mod audio;
-pub mod captions {}
+pub mod captions;
 pub mod diagnostics;
 pub mod mobile;
 pub mod models {}
