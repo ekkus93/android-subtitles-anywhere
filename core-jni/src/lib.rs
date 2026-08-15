@@ -131,10 +131,22 @@ impl FfiEvent {
     }
 }
 
+/// Creates a new protocol boundary and returns its opaque handle.
+///
+/// # Panics
+///
+/// Panics if the global boundary-store mutex is poisoned.
 pub fn create_boundary() -> u64 {
     BOUNDARIES.lock().expect("boundary store poisoned").create()
 }
 
+/// Destroys the protocol boundary identified by `handle`.
+///
+/// Returns `false` when the handle does not identify a live boundary.
+///
+/// # Panics
+///
+/// Panics if the global boundary-store mutex is poisoned.
 pub fn destroy_boundary(handle: u64) -> bool {
     BOUNDARIES
         .lock()
@@ -142,6 +154,13 @@ pub fn destroy_boundary(handle: u64) -> bool {
         .destroy(handle)
 }
 
+/// Resets the protocol boundary identified by `handle`.
+///
+/// Returns `false` when the handle does not identify a live boundary.
+///
+/// # Panics
+///
+/// Panics if the global boundary-store mutex is poisoned.
 pub fn reset_boundary(handle: u64) -> bool {
     BOUNDARIES
         .lock()
@@ -149,6 +168,16 @@ pub fn reset_boundary(handle: u64) -> bool {
         .reset(handle)
 }
 
+/// Starts `session_id` on the protocol boundary identified by `handle`.
+///
+/// # Errors
+///
+/// Returns [`FfiError::InvalidHandle`] for an unknown handle, or
+/// [`FfiError::Protocol`] when the core rejects the requested session.
+///
+/// # Panics
+///
+/// Panics if the global boundary-store mutex is poisoned.
 pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
     BOUNDARIES
         .lock()
@@ -156,6 +185,16 @@ pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
         .start_session(handle, session_id)
 }
 
+/// Validates one encoded protocol frame and returns its FFI events.
+///
+/// # Errors
+///
+/// Returns [`FfiError::InvalidHandle`] for an unknown handle, or
+/// [`FfiError::Protocol`] when protocol validation rejects the frame.
+///
+/// # Panics
+///
+/// Panics if the global boundary-store mutex is poisoned.
 pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError> {
     BOUNDARIES
         .lock()
