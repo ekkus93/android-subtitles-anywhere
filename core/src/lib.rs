@@ -4,13 +4,13 @@
 //! Platform-specific USB, UI, and lifecycle APIs do not belong here.
 
 pub mod asr {}
-pub mod audio {}
+pub mod audio;
 pub mod captions {}
-pub mod diagnostics {}
+pub mod diagnostics;
 pub mod models {}
 pub mod protocol;
 pub mod session {}
-pub mod transport {}
+pub mod transport;
 pub mod vad {}
 
 /// Core semantic version exposed to platform adapters and diagnostics.
