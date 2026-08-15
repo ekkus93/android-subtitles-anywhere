@@ -116,9 +116,7 @@ fn arbitrary_input_never_grows_parser_beyond_frame_bound() {
     let mut p = StreamParser::default();
     let mut x = 0x1234_5678u32;
     for _ in 0..10000 {
-        x = x
-            .wrapping_mul(1_664_525)
-            .wrapping_add(1_013_904_223);
+        x = x.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
         let b = (x >> 24) as u8;
         let _ = p.push(&[b]);
         assert!(p.buffered_len() <= MAX_FRAME);
