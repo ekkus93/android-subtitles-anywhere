@@ -105,12 +105,24 @@ class SessionDependenciesTest {
     }
 
     private class RecordingTransport : UsbByteTransport {
-        override val identity = UsbDeviceIdentity(1, 0x10c4, 0xea60, "fixture")
+        override val identity =
+            UsbDeviceIdentity(
+                1,
+                0x10c4,
+                0xea60,
+                "fixture",
+            )
         var closes = 0
 
-        override fun read(destination: ByteArray, timeoutMs: Int): Int = 0
+        override fun read(
+            destination: ByteArray,
+            timeoutMs: Int,
+        ): Int = 0
 
-        override fun write(source: ByteArray, timeoutMs: Int): Int = source.size
+        override fun write(
+            source: ByteArray,
+            timeoutMs: Int,
+        ): Int = source.size
 
         override fun close() {
             closes++
