@@ -62,12 +62,12 @@ impl EnergyVad {
             self.post_roll_remaining = self.config.post_roll_samples;
             return true;
         }
-        if self.state == SpeechState::Speech || self.state == SpeechState::PostRoll {
-            if self.post_roll_remaining > 0 {
-                self.post_roll_remaining = self.post_roll_remaining.saturating_sub(samples.len());
-                self.state = SpeechState::PostRoll;
-                return true;
-            }
+        if (self.state == SpeechState::Speech || self.state == SpeechState::PostRoll)
+            && self.post_roll_remaining > 0
+        {
+            self.post_roll_remaining = self.post_roll_remaining.saturating_sub(samples.len());
+            self.state = SpeechState::PostRoll;
+            return true;
         }
         self.state = SpeechState::Silence;
         self.remember_pre_roll(samples);
