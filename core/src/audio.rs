@@ -85,9 +85,10 @@ impl AudioRingBuffer {
             .metrics
             .popped_samples
             .saturating_add(u64::try_from(written).unwrap_or(u64::MAX));
-        self.metrics.underrun_samples = self.metrics.underrun_samples.saturating_add(
-            u64::try_from(requested.saturating_sub(written)).unwrap_or(u64::MAX),
-        );
+        self.metrics.underrun_samples = self
+            .metrics
+            .underrun_samples
+            .saturating_add(u64::try_from(requested.saturating_sub(written)).unwrap_or(u64::MAX));
         written
     }
 
@@ -173,8 +174,8 @@ pub fn resample_mono_linear(
         return Ok(input.to_vec());
     }
 
-    let output_len_u128 = (input.len() as u128 * u128::from(output_rate_hz))
-        .div_ceil(u128::from(input_rate_hz));
+    let output_len_u128 =
+        (input.len() as u128 * u128::from(output_rate_hz)).div_ceil(u128::from(input_rate_hz));
     let output_len = usize::try_from(output_len_u128).unwrap_or(usize::MAX);
     let mut output = Vec::with_capacity(output_len.min(input.len().saturating_mul(8)));
 
