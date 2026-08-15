@@ -334,7 +334,10 @@ pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError
 ///
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
-pub fn accept_caption(handle: u64, event: &CaptionEvent) -> Result<Option<CaptionUpdate>, FfiError> {
+pub fn accept_caption(
+    handle: u64,
+    event: &CaptionEvent,
+) -> Result<Option<CaptionUpdate>, FfiError> {
     BOUNDARIES
         .lock()
         .expect("boundary store poisoned")
