@@ -45,10 +45,7 @@ fn s16le_fixture_decodes_exactly() {
 #[test]
 fn stereo_fixture_downmixes_without_overflow() {
     let stereo = [32_767, 32_767, -32_768, -32_768, 10_000, -10_000];
-    assert_eq!(
-        stereo_to_mono(&stereo).unwrap(),
-        [32_767, -32_768, 0]
-    );
+    assert_eq!(stereo_to_mono(&stereo).unwrap(), [32_767, -32_768, 0]);
     assert_eq!(
         stereo_to_mono(&stereo[..5]),
         Err(PcmError::IncompleteStereoFrame)
@@ -69,7 +66,10 @@ fn canonicalizer_produces_16khz_mono_fixture() {
     let stereo_8khz = [0, 0, 1_000, 1_000, 2_000, 2_000, 3_000, 3_000];
     let canonical = canonicalize_s16(&stereo_8khz, 2, 8_000).unwrap();
     assert_eq!(CANONICAL_SAMPLE_RATE_HZ, 16_000);
-    assert_eq!(canonical, [0, 500, 1_000, 1_500, 2_000, 2_500, 3_000, 3_000]);
+    assert_eq!(
+        canonical,
+        [0, 500, 1_000, 1_500, 2_000, 2_500, 3_000, 3_000]
+    );
 }
 
 #[test]
