@@ -57,8 +57,11 @@ jobs:
         run: |
           set -euo pipefail
           IDF_ROOT="${RUNNER_TEMP}/esp-idf"
-          bash scripts/install-esp-idf.sh "${IDF_ROOT}"
-          echo "IDF_PATH=${IDF_ROOT}" >> "${GITHUB_ENV}"
+          ESP_IDF_ROOT="${IDF_ROOT}" bash scripts/install-esp-idf.sh
+          IDF_VERSION="$(tr -d '[:space:]' < firmware/IDF_VERSION)"
+          IDF_PATH="${IDF_ROOT}/esp-idf-${IDF_VERSION}"
+          test -f "${IDF_PATH}/export.sh"
+          echo "IDF_PATH=${IDF_PATH}" >> "${GITHUB_ENV}"
       - name: Build firmware
         shell: bash
         run: |
