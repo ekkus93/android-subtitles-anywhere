@@ -83,9 +83,8 @@ impl PcmFixture {
     /// Creates a deterministic synthetic PCM fixture.
     #[must_use]
     pub fn generated(id: &str, transcript: &str, duration_ms: u32) -> Self {
-        let sample_count_u64 = u64::from(CANONICAL_SAMPLE_RATE_HZ)
-            .saturating_mul(u64::from(duration_ms))
-            / 1_000;
+        let sample_count_u64 =
+            u64::from(CANONICAL_SAMPLE_RATE_HZ).saturating_mul(u64::from(duration_ms)) / 1_000;
         let sample_count = usize::try_from(sample_count_u64).unwrap_or(usize::MAX);
         let samples = (0..sample_count)
             .map(|index| {
@@ -117,8 +116,8 @@ impl PcmFixture {
         for (index, samples) in self.samples.chunks(chunk_samples).enumerate() {
             let offset = index.saturating_mul(chunk_samples);
             let offset_u64 = u64::try_from(offset).unwrap_or(u64::MAX);
-            let source_start_ms = offset_u64.saturating_mul(1_000)
-                / u64::from(CANONICAL_SAMPLE_RATE_HZ);
+            let source_start_ms =
+                offset_u64.saturating_mul(1_000) / u64::from(CANONICAL_SAMPLE_RATE_HZ);
             events.extend(backend.push_audio(AudioChunk {
                 session_id,
                 source_start_ms,
@@ -154,8 +153,8 @@ fn edit_distance<T: Eq>(reference: &[T], hypothesis: &[T]) -> usize {
     for (row, reference_item) in reference.iter().enumerate() {
         current[0] = row.saturating_add(1);
         for (column, hypothesis_item) in hypothesis.iter().enumerate() {
-            let substitution = previous[column]
-                .saturating_add(usize::from(reference_item != hypothesis_item));
+            let substitution =
+                previous[column].saturating_add(usize::from(reference_item != hypothesis_item));
             let deletion = previous[column.saturating_add(1)].saturating_add(1);
             let insertion = current[column].saturating_add(1);
             current[column.saturating_add(1)] = substitution.min(deletion).min(insertion);
