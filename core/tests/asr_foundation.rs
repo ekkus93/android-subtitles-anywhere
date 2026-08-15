@@ -14,7 +14,7 @@ struct FakeBackend {
 }
 
 impl AsrBackend for FakeBackend {
-    fn id(&self) -> &str {
+    fn id(&self) -> &'static str {
         "fake"
     }
 
@@ -123,11 +123,9 @@ fn generated_fixture_injects_without_hardware() {
 #[test]
 fn normalization_and_error_rates_are_deterministic() {
     assert_eq!(normalize_transcript("Hello,  WORLD!"), "hello world");
-    assert_eq!(
-        word_error_rate("one two three", "one four three"),
-        1.0 / 3.0
-    );
-    assert_eq!(character_error_rate("abc", "adc"), 1.0 / 3.0);
+    let expected = 1.0 / 3.0;
+    assert!((word_error_rate("one two three", "one four three") - expected).abs() < f64::EPSILON);
+    assert!((character_error_rate("abc", "adc") - expected).abs() < f64::EPSILON);
 }
 
 #[test]
@@ -139,7 +137,8 @@ fn latency_metrics_report_real_time_factor() {
         finalization_delay_ms: Some(200),
         end_to_caption_ms: Some(250),
     };
-    assert_eq!(metrics.real_time_factor(), Some(0.25));
+    let factor = metrics.real_time_factor().unwrap();
+    assert!((factor - 0.25).abs() < f64::EPSILON);
 }
 
 #[test]
