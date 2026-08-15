@@ -27,7 +27,7 @@ pub enum MessageType {
 impl TryFrom<u8> for MessageType {
     type Error = ProtocolError;
 
-    fn try_from(v: u8) -> Result<Self, Self::Error> {
+    fn try_from(v: u8) -> Result<Self, ProtocolError> {
         Ok(match v {
             1 => Self::Hello,
             2 => Self::StartSession,
@@ -69,17 +69,18 @@ pub enum ProtocolError {
 fn valid_length(t: MessageType, n: usize) -> bool {
     match t {
         MessageType::Hello => n == 20,
-        MessageType::StartSession => n == 8,
+        MessageType::StartSession | MessageType::Status => n == 8,
         MessageType::StopSession | MessageType::Heartbeat => n == 0,
         MessageType::SetPowerState => n == 1,
         MessageType::AudioFormat => n == 12,
         MessageType::AudioData => n > 0,
-        MessageType::Status => n == 8,
         MessageType::Diagnostics => n == 32,
         MessageType::Error => (4..=164).contains(&n),
     }
 }
 
+/// Computes the CRC-32/ISO-HDLC checksum over a sequence of byte slices.
+#[must_use]
 pub fn crc32(parts: &[&[u8]]) -> u32 {
     let mut crc = 0xffff_ffffu32;
     for part in parts {
@@ -97,6 +98,11 @@ pub fn crc32(parts: &[&[u8]]) -> u32 {
     !crc
 }
 
+/// Encodes one validated protocol frame.
+///
+/// # Errors
+///
+/// Returns [`ProtocolError`] when flags, payload size, or message-specific payload length are invalid.
 pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
     if frame.flags & !0x03 != 0 {
         return Err(ProtocolError::ReservedFlags(frame.flags));
@@ -128,6 +134,16 @@ pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
     Ok(out)
 }
 
+/// Decodes and validates exactly one complete protocol frame.
+///
+/// # Errors
+///
+/// Returns [`ProtocolError`] for malformed, unsupported, oversized, truncated, or corrupt frames.
+///
+/// # Panics
+///
+/// This function does not panic for externally supplied input. Fixed-size field conversions occur only
+/// after the minimum header length has been validated.
 pub fn decode(bytes: &[u8]) -> Result<Frame, ProtocolError> {
     if bytes.len() < HEADER_LEN || bytes[..4] != MAGIC {
         return Err(ProtocolError::InvalidField);
@@ -177,10 +193,18 @@ pub struct StreamParser {
 }
 
 impl StreamParser {
+    /// Returns the number of bytes currently retained by the bounded parser.
+    #[must_use]
     pub fn buffered_len(&self) -> usize {
         self.buf.len()
     }
 
+    /// Adds stream bytes and returns every complete frame or parse error discovered.
+    ///
+    /// # Panics
+    ///
+    /// This method does not panic for externally supplied input. Header field conversion occurs only
+    /// after a complete fixed-size header has been buffered.
     pub fn push(&mut self, data: &[u8]) -> Vec<Result<Frame, ProtocolError>> {
         for &b in data {
             if self.buf.len() < MAX_FRAME {
@@ -280,6 +304,11 @@ impl PeerState {
         changed
     }
 
+    /// Activates a nonzero session identifier.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProtocolError::InvalidField`] when `id` is zero.
     pub fn start_session(&mut self, id: u64) -> Result<(), ProtocolError> {
         if id == 0 {
             return Err(ProtocolError::InvalidField);
@@ -288,6 +317,11 @@ impl PeerState {
         Ok(())
     }
 
+    /// Validates that a message belongs to the active session.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProtocolError::StaleSession`] when `id` is not the active session.
     pub fn validate_session(&self, id: u64) -> Result<(), ProtocolError> {
         if self.active_session == Some(id) {
             Ok(())
