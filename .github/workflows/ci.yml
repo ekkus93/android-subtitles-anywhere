@@ -50,7 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           NDK_VERSION="27.2.12479018"
-          yes | sdkmanager "ndk;${NDK_VERSION}" >/dev/null
+          sdkmanager "ndk;${NDK_VERSION}" >/dev/null
+          test -d "${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}"
           echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "${GITHUB_ENV}"
       - name: Cross-build Rust JNI library
         run: bash scripts/build-android-rust.sh
