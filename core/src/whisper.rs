@@ -7,8 +7,7 @@ pub const BACKEND_ID: &str = "whisper-tiny-multilingual";
 pub const WHISPER_CPP_VERSION: &str = "1.9.1";
 pub const MODEL_ID: &str = "ggml-tiny.bin";
 pub const MODEL_SIZE_BYTES: u64 = 77_691_713;
-pub const MODEL_SHA256: &str =
-    "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21";
+pub const MODEL_SHA256: &str = "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21";
 pub const WINDOW_SAMPLES: usize = 80_000;
 pub const STEP_SAMPLES: usize = 16_000;
 pub const OVERLAP_SAMPLES: usize = WINDOW_SAMPLES - STEP_SAMPLES;
@@ -100,7 +99,9 @@ impl<E: WhisperEngine> WhisperTinyBackend<E> {
     fn decode_ready_windows(&mut self) -> Result<Vec<CaptionEvent>, AsrError> {
         let mut events = Vec::new();
         while self.buffer.len() >= WINDOW_SAMPLES {
-            let result = self.engine.transcribe(&self.buffer[..WINDOW_SAMPLES], false)?;
+            let result = self
+                .engine
+                .transcribe(&self.buffer[..WINDOW_SAMPLES], false)?;
             if let Some(event) = self.caption(&result, false) {
                 events.push(event);
             }
