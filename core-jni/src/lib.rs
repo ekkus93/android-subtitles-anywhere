@@ -132,10 +132,7 @@ impl FfiEvent {
 }
 
 pub fn create_boundary() -> u64 {
-    BOUNDARIES
-        .lock()
-        .expect("boundary store poisoned")
-        .create()
+    BOUNDARIES.lock().expect("boundary store poisoned").create()
 }
 
 pub fn destroy_boundary(handle: u64) -> bool {
@@ -226,7 +223,9 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     handle: jlong,
     session_id: jlong,
 ) -> jboolean {
-    u8::from(handle > 0 && session_id > 0 && start_session(handle as u64, session_id as u64).is_ok())
+    u8::from(
+        handle > 0 && session_id > 0 && start_session(handle as u64, session_id as u64).is_ok(),
+    )
 }
 
 #[unsafe(no_mangle)]
