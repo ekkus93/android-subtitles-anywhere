@@ -204,7 +204,10 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     _class: JClass,
     handle: jlong,
 ) -> jboolean {
-    u8::from(handle > 0 && destroy_boundary(handle as u64))
+    let Ok(handle) = u64::try_from(handle) else {
+        return 0;
+    };
+    u8::from(handle > 0 && destroy_boundary(handle))
 }
 
 #[unsafe(no_mangle)]
@@ -213,7 +216,10 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     _class: JClass,
     handle: jlong,
 ) -> jboolean {
-    u8::from(handle > 0 && reset_boundary(handle as u64))
+    let Ok(handle) = u64::try_from(handle) else {
+        return 0;
+    };
+    u8::from(handle > 0 && reset_boundary(handle))
 }
 
 #[unsafe(no_mangle)]
@@ -223,9 +229,10 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     handle: jlong,
     session_id: jlong,
 ) -> jboolean {
-    u8::from(
-        handle > 0 && session_id > 0 && start_session(handle as u64, session_id as u64).is_ok(),
-    )
+    let (Ok(handle), Ok(session_id)) = (u64::try_from(handle), u64::try_from(session_id)) else {
+        return 0;
+    };
+    u8::from(handle > 0 && session_id > 0 && start_session(handle, session_id).is_ok())
 }
 
 #[unsafe(no_mangle)]
@@ -235,12 +242,12 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     handle: jlong,
     frame: JByteArray,
 ) -> jbyteArray {
-    let result = if handle <= 0 {
-        Err(FfiError::InvalidHandle)
-    } else {
-        env.convert_byte_array(&frame)
+    let result = match u64::try_from(handle) {
+        Ok(handle) if handle > 0 => env
+            .convert_byte_array(&frame)
             .map_err(|_| FfiError::InvalidHandle)
-            .and_then(|bytes| accept_frame(handle as u64, &bytes))
+            .and_then(|bytes| accept_frame(handle, &bytes)),
+        _ => Err(FfiError::InvalidHandle),
     };
     match env.byte_array_from_slice(&encode_result(result)) {
         Ok(array) => array.into_raw(),
