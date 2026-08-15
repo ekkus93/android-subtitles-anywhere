@@ -164,6 +164,12 @@ fn edit_distance<T: Eq>(reference: &[T], hypothesis: &[T]) -> usize {
     previous[hypothesis.len()]
 }
 
+fn ratio(numerator: usize, denominator: usize) -> f64 {
+    let numerator = u32::try_from(numerator).unwrap_or(u32::MAX);
+    let denominator = u32::try_from(denominator).unwrap_or(u32::MAX);
+    f64::from(numerator) / f64::from(denominator)
+}
+
 /// Word error rate after repository-standard normalization.
 #[must_use]
 pub fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
@@ -174,7 +180,10 @@ pub fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
     if reference_words.is_empty() {
         return f64::from(!hypothesis_words.is_empty());
     }
-    edit_distance(&reference_words, &hypothesis_words) as f64 / reference_words.len() as f64
+    ratio(
+        edit_distance(&reference_words, &hypothesis_words),
+        reference_words.len(),
+    )
 }
 
 /// Character error rate after repository-standard normalization.
@@ -185,7 +194,7 @@ pub fn character_error_rate(reference: &str, hypothesis: &str) -> f64 {
     if reference.is_empty() {
         return f64::from(!hypothesis.is_empty());
     }
-    edit_distance(&reference, &hypothesis) as f64 / reference.len() as f64
+    ratio(edit_distance(&reference, &hypothesis), reference.len())
 }
 
 /// Timing observations used by deterministic and device ASR benchmarks.
@@ -202,7 +211,11 @@ impl LatencyMetrics {
     /// Real-time factor (`processing time / audio duration`).
     #[must_use]
     pub fn real_time_factor(self) -> Option<f64> {
-        (self.audio_duration_ms != 0)
-            .then(|| self.processing_ms as f64 / self.audio_duration_ms as f64)
+        if self.audio_duration_ms == 0 {
+            return None;
+        }
+        let processing_ms = u32::try_from(self.processing_ms).unwrap_or(u32::MAX);
+        let audio_duration_ms = u32::try_from(self.audio_duration_ms).unwrap_or(u32::MAX);
+        Some(f64::from(processing_ms) / f64::from(audio_duration_ms))
     }
 }
