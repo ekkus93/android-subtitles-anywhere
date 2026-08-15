@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 android {
@@ -60,4 +62,9 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    baseline = file("detekt-baseline.xml")
 }

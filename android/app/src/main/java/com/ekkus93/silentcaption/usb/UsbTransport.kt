@@ -20,15 +20,33 @@ enum class UsbTransportError {
 
 sealed interface UsbTransportState {
     data object Detached : UsbTransportState
-    data class PermissionRequired(val device: UsbDeviceIdentity) : UsbTransportState
-    data class Ready(val device: UsbDeviceIdentity) : UsbTransportState
-    data class Failed(val error: UsbTransportError, val detail: String) : UsbTransportState
+
+    data class PermissionRequired(
+        val device: UsbDeviceIdentity,
+    ) : UsbTransportState
+
+    data class Ready(
+        val device: UsbDeviceIdentity,
+    ) : UsbTransportState
+
+    data class Failed(
+        val error: UsbTransportError,
+        val detail: String,
+    ) : UsbTransportState
 }
 
 interface UsbByteTransport : Closeable {
     val identity: UsbDeviceIdentity
-    fun read(destination: ByteArray, timeoutMs: Int): Int
-    fun write(source: ByteArray, timeoutMs: Int): Int
+
+    fun read(
+        destination: ByteArray,
+        timeoutMs: Int,
+    ): Int
+
+    fun write(
+        source: ByteArray,
+        timeoutMs: Int,
+    ): Int
 }
 
 object PrototypeUsbIds {

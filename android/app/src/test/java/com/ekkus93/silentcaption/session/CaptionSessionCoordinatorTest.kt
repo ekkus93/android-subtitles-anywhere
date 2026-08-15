@@ -26,12 +26,13 @@ class CaptionSessionCoordinatorTest {
     @Test
     fun all_dependencies_must_be_ready() {
         val usb = FakeDependency(ready = false)
-        val coordinator = CaptionSessionCoordinator(
-            usb,
-            FakeDependency(),
-            FakeDependency(),
-            FakeDependency(),
-        )
+        val coordinator =
+            CaptionSessionCoordinator(
+                usb,
+                FakeDependency(),
+                FakeDependency(),
+                FakeDependency(),
+            )
         assertEquals(CaptionSessionPhase.Unavailable, coordinator.refreshReadiness().phase)
         usb.ready = true
         assertEquals(CaptionSessionPhase.Ready, coordinator.refreshReadiness().phase)
@@ -40,12 +41,13 @@ class CaptionSessionCoordinatorTest {
     @Test
     fun start_and_stop_are_idempotent_across_dependencies() {
         val dependencies = List(4) { FakeDependency() }
-        val coordinator = CaptionSessionCoordinator(
-            dependencies[0],
-            dependencies[1],
-            dependencies[2],
-            dependencies[3],
-        )
+        val coordinator =
+            CaptionSessionCoordinator(
+                dependencies[0],
+                dependencies[1],
+                dependencies[2],
+                dependencies[3],
+            )
         assertEquals(CaptionSessionPhase.Listening, coordinator.startListening(11).phase)
         coordinator.startListening(12)
         dependencies.forEach { assertEquals(1, it.starts) }
@@ -71,12 +73,13 @@ class CaptionSessionCoordinatorTest {
 
     @Test
     fun reconnect_preserves_generation_and_filters_stale_events() {
-        val coordinator = CaptionSessionCoordinator(
-            FakeDependency(),
-            FakeDependency(),
-            FakeDependency(),
-            FakeDependency(),
-        )
+        val coordinator =
+            CaptionSessionCoordinator(
+                FakeDependency(),
+                FakeDependency(),
+                FakeDependency(),
+                FakeDependency(),
+            )
         coordinator.startListening(1)
         val first = coordinator.state.generation
         assertTrue(coordinator.acceptsEventGeneration(first))

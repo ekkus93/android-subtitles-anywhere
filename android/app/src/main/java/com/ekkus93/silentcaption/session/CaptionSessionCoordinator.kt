@@ -2,7 +2,9 @@ package com.ekkus93.silentcaption.session
 
 interface SessionDependency {
     val ready: Boolean
+
     fun start(sessionId: Long): Boolean
+
     fun stop()
 }
 
@@ -40,7 +42,8 @@ class CaptionSessionCoordinator(
     }
 
     fun stopListening(): CaptionSessionState {
-        if (state.phase !in setOf(
+        if (state.phase !in
+            setOf(
                 CaptionSessionPhase.Starting,
                 CaptionSessionPhase.Listening,
                 CaptionSessionPhase.Reconnecting,

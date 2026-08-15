@@ -1,8 +1,13 @@
 package com.ekkus93.silentcaption.usb
 
 sealed interface RustProtocolResult {
-    data class Accepted(val events: List<RustProtocolEvent>) : RustProtocolResult
-    data class Rejected(val reason: String) : RustProtocolResult
+    data class Accepted(
+        val events: List<RustProtocolEvent>,
+    ) : RustProtocolResult
+
+    data class Rejected(
+        val reason: String,
+    ) : RustProtocolResult
 }
 
 data class RustProtocolEvent(
@@ -15,6 +20,7 @@ data class RustProtocolEvent(
 
 interface RustProtocolApi {
     fun acceptFrame(frame: ByteArray): RustProtocolResult
+
     fun reset()
 }
 

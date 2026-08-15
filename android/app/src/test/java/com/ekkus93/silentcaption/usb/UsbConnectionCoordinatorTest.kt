@@ -21,13 +21,14 @@ class UsbConnectionCoordinatorTest {
 
     @Test
     fun ambiguousUnsupportedDevicesNeverBecomeReady() {
-        val platform = FakePlatform(
-            listOf(
-                FakeDevice(UsbDeviceIdentity(1, 1, 1, "A")),
-                FakeDevice(UsbDeviceIdentity(2, 2, 2, "B")),
-            ),
-            permitted = true,
-        )
+        val platform =
+            FakePlatform(
+                listOf(
+                    FakeDevice(UsbDeviceIdentity(1, 1, 1, "A")),
+                    FakeDevice(UsbDeviceIdentity(2, 2, 2, "B")),
+                ),
+                permitted = true,
+            )
         val states = mutableListOf<UsbTransportState>()
         val coordinator = UsbConnectionCoordinator(platform, states::add)
         assertNull(coordinator.discover())
@@ -62,7 +63,9 @@ class UsbConnectionCoordinatorTest {
         assertTrue(states.last() is UsbTransportState.Detached)
     }
 
-    private data class FakeDevice(override val identity: UsbDeviceIdentity) : UsbPlatformDevice
+    private data class FakeDevice(
+        override val identity: UsbDeviceIdentity,
+    ) : UsbPlatformDevice
 
     private class FakePlatform(
         private val attached: List<UsbPlatformDevice>,
@@ -70,16 +73,33 @@ class UsbConnectionCoordinatorTest {
     ) : UsbPlatform {
         var requested: UsbPlatformDevice? = null
         var openResult: UsbByteTransport? = FakeTransport(attached.firstOrNull()?.identity)
+
         override fun devices(): List<UsbPlatformDevice> = attached
+
         override fun hasPermission(device: UsbPlatformDevice): Boolean = permitted
-        override fun requestPermission(device: UsbPlatformDevice) { requested = device }
+
+        override fun requestPermission(device: UsbPlatformDevice) {
+            requested = device
+        }
+
         override fun open(device: UsbPlatformDevice): UsbByteTransport? = openResult
     }
 
-    private class FakeTransport(identity: UsbDeviceIdentity?) : UsbByteTransport {
+    private class FakeTransport(
+        identity: UsbDeviceIdentity?,
+    ) : UsbByteTransport {
         override val identity = identity ?: UsbDeviceIdentity(0, 0, 0, null)
-        override fun read(destination: ByteArray, timeoutMs: Int): Int = 0
-        override fun write(source: ByteArray, timeoutMs: Int): Int = source.size
+
+        override fun read(
+            destination: ByteArray,
+            timeoutMs: Int,
+        ): Int = 0
+
+        override fun write(
+            source: ByteArray,
+            timeoutMs: Int,
+        ): Int = source.size
+
         override fun close() = Unit
     }
 }

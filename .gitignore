@@ -29,3 +29,9 @@ replay_pid*
 # Rust / generated Android native products
 core-jni/target/
 android/app/src/main/jniLibs/
+
+# Gradle / Android build output and local machine config
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties

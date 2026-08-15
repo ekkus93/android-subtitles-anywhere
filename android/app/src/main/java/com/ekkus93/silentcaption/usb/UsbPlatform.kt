@@ -6,8 +6,11 @@ interface UsbPlatformDevice {
 
 interface UsbPlatform {
     fun devices(): List<UsbPlatformDevice>
+
     fun hasPermission(device: UsbPlatformDevice): Boolean
+
     fun requestPermission(device: UsbPlatformDevice)
+
     fun open(device: UsbPlatformDevice): UsbByteTransport?
 }
 

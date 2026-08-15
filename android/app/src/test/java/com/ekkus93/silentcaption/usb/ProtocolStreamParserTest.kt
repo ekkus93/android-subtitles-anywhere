@@ -26,10 +26,11 @@ class ProtocolStreamParserTest {
         val frame = frame(payload = byteArrayOf(9))
         val received = mutableListOf<ByteArray>()
         var rejected = 0
-        val parser = ProtocolStreamParser(
-            onFrame = { received += it.bytes },
-            onRejectedBytes = { rejected += it },
-        )
+        val parser =
+            ProtocolStreamParser(
+                onFrame = { received += it.bytes },
+                onRejectedBytes = { rejected += it },
+            )
         parser.accept(byteArrayOf(0x55, 0x66, 0x77) + frame)
         assertEquals(3, rejected)
         assertArrayEquals(frame, received.single())

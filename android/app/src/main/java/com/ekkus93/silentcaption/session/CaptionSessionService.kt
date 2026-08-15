@@ -20,10 +20,15 @@ class CaptionSessionService : Service() {
         )
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         startForeground(
             NOTIFICATION_ID,
-            NotificationCompat.Builder(this, CHANNEL_ID)
+            NotificationCompat
+                .Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .setContentTitle("Silent Caption")
                 .setContentText("Caption session active")

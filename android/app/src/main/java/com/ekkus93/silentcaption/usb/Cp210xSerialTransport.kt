@@ -10,9 +10,15 @@ class Cp210xSerialTransport private constructor(
     private val connection: UsbDeviceConnection,
     private val port: UsbSerialPort,
 ) : UsbByteTransport {
-    override fun read(destination: ByteArray, timeoutMs: Int): Int = port.read(destination, timeoutMs)
+    override fun read(
+        destination: ByteArray,
+        timeoutMs: Int,
+    ): Int = port.read(destination, timeoutMs)
 
-    override fun write(source: ByteArray, timeoutMs: Int): Int {
+    override fun write(
+        source: ByteArray,
+        timeoutMs: Int,
+    ): Int {
         port.write(source, timeoutMs)
         return source.size
     }
@@ -25,7 +31,10 @@ class Cp210xSerialTransport private constructor(
     companion object {
         const val BAUD_RATE = 921600
 
-        fun open(device: UsbDevice, connection: UsbDeviceConnection): UsbByteTransport? {
+        fun open(
+            device: UsbDevice,
+            connection: UsbDeviceConnection,
+        ): UsbByteTransport? {
             val driver = UsbSerialProber.getDefaultProber().probeDevice(device) ?: return null
             val port = driver.ports.firstOrNull() ?: return null
             return try {
@@ -41,12 +50,13 @@ class Cp210xSerialTransport private constructor(
                 runCatching { port.dtr = false }
                 runCatching { port.rts = false }
                 Cp210xSerialTransport(
-                    identity = UsbDeviceIdentity(
-                        device.deviceId,
-                        device.vendorId,
-                        device.productId,
-                        device.productName,
-                    ),
+                    identity =
+                        UsbDeviceIdentity(
+                            device.deviceId,
+                            device.vendorId,
+                            device.productId,
+                            device.productName,
+                        ),
                     connection = connection,
                     port = port,
                 )

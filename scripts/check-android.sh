@@ -6,4 +6,6 @@ set -euo pipefail
 "${GRADLE_CMD}" -p android --no-daemon \
   :app:assembleDebug \
   :app:testDebugUnitTest \
-  :app:lintDebug
+  :app:lintDebug \
+  :app:ktlintCheck \
+  :app:detekt

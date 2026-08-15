@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:CaptionSessionStateMachine.kt$CaptionSessionStateMachine$private fun reduce( current: CaptionSessionState, event: CaptionSessionEvent, ): CaptionSessionState</ID>
+    <ID>FunctionNaming:MainActivity.kt$@Composable fun SilentCaptionApp()</ID>
+    <ID>FunctionNaming:Theme.kt$@Composable fun SilentCaptionTheme(content: @Composable () -&gt; Unit)</ID>
+    <ID>LoopWithTooManyJumpStatements:ProtocolStreamParser.kt$ProtocolStreamParser$while</ID>
+    <ID>MagicNumber:Cp210xSerialTransport.kt$Cp210xSerialTransport.Companion$8</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$0xff</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$0xffff_ffffL</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$3</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$4</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$5</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$6</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$7</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$8</ID>
+    <ID>MagicNumber:NativeRustProtocolApi.kt$NativeRustProtocolApi$9</ID>
+    <ID>MagicNumber:ProtocolStreamParser.kt$ProtocolStreamParser$0xffL</ID>
+    <ID>MagicNumber:ProtocolStreamParser.kt$ProtocolStreamParser$16</ID>
+    <ID>MagicNumber:ProtocolStreamParser.kt$ProtocolStreamParser$24</ID>
+    <ID>MagicNumber:ProtocolStreamParser.kt$ProtocolStreamParser$3</ID>
+    <ID>MagicNumber:ProtocolStreamParser.kt$ProtocolStreamParser$8</ID>
+    <ID>MagicNumber:Theme.kt$0xFF00201C</ID>
+    <ID>MagicNumber:Theme.kt$0xFF0B0F14</ID>
+    <ID>MagicNumber:Theme.kt$0xFF131A22</ID>
+    <ID>MagicNumber:Theme.kt$0xFF1B2530</ID>
+    <ID>MagicNumber:Theme.kt$0xFF39D6C5</ID>
+    <ID>MagicNumber:Theme.kt$0xFF9BAAB5</ID>
+    <ID>MagicNumber:Theme.kt$0xFFF2F6F8</ID>
+    <ID>MagicNumber:Theme.kt$0xFFFF6B6B</ID>
+    <ID>MaxLineLength:AndroidUsbPlatform.kt$AndroidUsbPlatform$override fun hasPermission(device: UsbPlatformDevice): Boolean</ID>
+    <ID>ReturnCount:AndroidUsbPlatform.kt$AndroidUsbPlatform$override fun open(device: UsbPlatformDevice): UsbByteTransport?</ID>
+    <ID>ReturnCount:CaptionSessionCoordinator.kt$CaptionSessionCoordinator$fun startListening(sessionId: Long): CaptionSessionState</ID>
+    <ID>ReturnCount:Cp210xSerialTransport.kt$Cp210xSerialTransport.Companion$fun open( device: UsbDevice, connection: UsbDeviceConnection, ): UsbByteTransport?</ID>
+    <ID>ReturnCount:NativeRustProtocolApi.kt$NativeRustProtocolApi$private fun decodeResult(encoded: ByteArray): RustProtocolResult</ID>
+    <ID>ReturnCount:UsbPlatform.kt$UsbConnectionCoordinator$fun discover(): UsbDeviceIdentity?</ID>
+    <ID>ReturnCount:UsbPlatform.kt$UsbConnectionCoordinator$fun onPermissionResult(granted: Boolean): UsbByteTransport?</ID>
+    <ID>ReturnCount:UsbSessionControllerTest.kt$UsbSessionControllerTest.FakeTransport$override fun read( destination: ByteArray, timeoutMs: Int, ): Int</ID>
+    <ID>SwallowedException:Cp210xSerialTransport.kt$Cp210xSerialTransport.Companion$error: Exception</ID>
+    <ID>TooGenericExceptionCaught:Cp210xSerialTransport.kt$Cp210xSerialTransport.Companion$error: Exception</ID>
+    <ID>TooGenericExceptionCaught:UsbSessionController.kt$UsbSessionController$error: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

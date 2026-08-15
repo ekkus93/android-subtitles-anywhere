@@ -1,10 +1,10 @@
 package com.ekkus93.silentcaption.usb
 
-import java.util.concurrent.LinkedBlockingQueue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.LinkedBlockingQueue
 
 class UsbSessionControllerTest {
     @Test
@@ -41,21 +41,36 @@ class UsbSessionControllerTest {
     private class FakeTransport : UsbByteTransport {
         override val identity = UsbDeviceIdentity(1, 0x10c4, 0xea60, "CP210x")
         val incoming = LinkedBlockingQueue<ByteArray>()
-        override fun read(destination: ByteArray, timeoutMs: Int): Int {
+
+        override fun read(
+            destination: ByteArray,
+            timeoutMs: Int,
+        ): Int {
             val value = incoming.poll(timeoutMs.toLong(), java.util.concurrent.TimeUnit.MILLISECONDS) ?: return 0
             if (value.isEmpty()) return -1
             value.copyInto(destination)
             return value.size
         }
-        override fun write(source: ByteArray, timeoutMs: Int): Int = source.size
+
+        override fun write(
+            source: ByteArray,
+            timeoutMs: Int,
+        ): Int = source.size
+
         override fun close() = Unit
     }
 
     private class RecordingSink : ProtocolFrameSink {
         val frames = mutableListOf<ByteArray>()
         var resetCount = 0
-        override fun accept(frame: ByteArray) { frames += frame }
-        override fun reset() { resetCount++ }
+
+        override fun accept(frame: ByteArray) {
+            frames += frame
+        }
+
+        override fun reset() {
+            resetCount++
+        }
     }
 
     private fun waitUntil(condition: () -> Boolean) {

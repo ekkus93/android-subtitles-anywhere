@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 interface ProtocolFrameSink {
     fun accept(frame: ByteArray)
+
     fun reset()
 }
 
@@ -55,7 +56,10 @@ class UsbSessionController(
         }
     }
 
-    private fun fail(error: UsbTransportError, detail: String) {
+    private fun fail(
+        error: UsbTransportError,
+        detail: String,
+    ) {
         running.set(false)
         onState(UsbTransportState.Failed(error, detail))
     }

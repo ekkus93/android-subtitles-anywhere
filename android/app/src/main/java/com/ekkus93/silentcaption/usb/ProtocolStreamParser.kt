@@ -5,7 +5,9 @@ private const val MAX_PAYLOAD_BYTES = 4096
 private const val MAX_FRAME_BYTES = HEADER_BYTES + MAX_PAYLOAD_BYTES
 private val MAGIC = byteArrayOf('S'.code.toByte(), 'C'.code.toByte(), 'A'.code.toByte(), 'P'.code.toByte())
 
-data class ProtocolFrameBytes(val bytes: ByteArray)
+data class ProtocolFrameBytes(
+    val bytes: ByteArray,
+)
 
 class ProtocolStreamParser(
     private val onFrame: (ProtocolFrameBytes) -> Unit,
@@ -14,7 +16,10 @@ class ProtocolStreamParser(
     private val buffer = ByteArray(MAX_FRAME_BYTES)
     private var used = 0
 
-    fun accept(source: ByteArray, length: Int = source.size) {
+    fun accept(
+        source: ByteArray,
+        length: Int = source.size,
+    ) {
         require(length in 0..source.size)
         var offset = 0
         while (offset < length) {

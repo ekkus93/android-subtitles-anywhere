@@ -14,19 +14,18 @@ class AndroidUsbPlatform(
     private val appContext = context.applicationContext
     private val manager = appContext.getSystemService(Context.USB_SERVICE) as UsbManager
 
-    override fun devices(): List<UsbPlatformDevice> =
-        manager.deviceList.values.map(::AndroidUsbDevice)
+    override fun devices(): List<UsbPlatformDevice> = manager.deviceList.values.map(::AndroidUsbDevice)
 
-    override fun hasPermission(device: UsbPlatformDevice): Boolean =
-        manager.hasPermission((device as AndroidUsbDevice).device)
+    override fun hasPermission(device: UsbPlatformDevice): Boolean = manager.hasPermission((device as AndroidUsbDevice).device)
 
     override fun requestPermission(device: UsbPlatformDevice) {
-        val pendingIntent = PendingIntent.getBroadcast(
-            appContext,
-            0,
-            Intent(ACTION_USB_PERMISSION).setPackage(appContext.packageName),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                appContext,
+                0,
+                Intent(ACTION_USB_PERMISSION).setPackage(appContext.packageName),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
         manager.requestPermission((device as AndroidUsbDevice).device, pendingIntent)
     }
 
@@ -40,13 +39,16 @@ class AndroidUsbPlatform(
         }
     }
 
-    private class AndroidUsbDevice(val device: UsbDevice) : UsbPlatformDevice {
-        override val identity = UsbDeviceIdentity(
-            deviceId = device.deviceId,
-            vendorId = device.vendorId,
-            productId = device.productId,
-            productName = device.productName,
-        )
+    private class AndroidUsbDevice(
+        val device: UsbDevice,
+    ) : UsbPlatformDevice {
+        override val identity =
+            UsbDeviceIdentity(
+                deviceId = device.deviceId,
+                vendorId = device.vendorId,
+                productId = device.productId,
+                productName = device.productName,
+            )
     }
 
     companion object {
