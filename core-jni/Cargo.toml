@@ -8,6 +8,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+jni = "=0.21.1"
 silent-caption-core = { path = "../core" }
 
 [lints.clippy]
