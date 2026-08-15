@@ -75,7 +75,10 @@ fn partials_replace_and_finals_commit_once() {
 
 #[test]
 fn punctuation_casing_and_confidence_are_not_fabricated() {
-    assert_eq!(normalize_display_text("  Hello,   WORLD!  "), "Hello, WORLD!");
+    assert_eq!(
+        normalize_display_text("  Hello,   WORLD!  "),
+        "Hello, WORLD!"
+    );
     let event = caption(1, "Mixed CASE?", true);
     assert_eq!(event.confidence, None);
     let mut stabilizer = CaptionStabilizer::default();
