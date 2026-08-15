@@ -15,6 +15,7 @@
 
 static const char *TAG = "sc_a2dp";
 static sc_a2dp_status_t s_status;
+static sc_audio_queue_t s_audio_queue;
 
 static uint32_t now_ms(void)
 {
@@ -23,7 +24,7 @@ static uint32_t now_ms(void)
 
 static void audio_data_callback(const uint8_t *data, uint32_t length)
 {
-    if (!sc_audio_queue_try_push(data, (size_t)length, now_ms())) {
+    if (!sc_audio_queue_push(&s_audio_queue, data, (size_t)length, now_ms())) {
         ESP_LOGW(TAG, "A2DP audio block dropped: %" PRIu32 " bytes", length);
     }
 }
@@ -74,7 +75,7 @@ static void a2dp_event_callback(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *pa
 void sc_a2dp_sink_init(void)
 {
     memset(&s_status, 0, sizeof(s_status));
-    sc_audio_queue_init();
+    sc_audio_queue_reset(&s_audio_queue);
 
     esp_err_t err = nvs_flash_init();
     if ((err == ESP_ERR_NVS_NO_FREE_PAGES) || (err == ESP_ERR_NVS_NEW_VERSION_FOUND)) {
