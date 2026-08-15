@@ -128,10 +128,7 @@ fn repeated_lifecycle_cycles_do_not_reuse_live_handles_or_leak_state() {
         select_backend(handle, BackendSelection::Zipformer).unwrap();
         start_session(handle, cycle).unwrap();
         let update = accept_caption(handle, &caption(cycle, 1, "partial", false)).unwrap();
-        assert!(matches!(
-            update,
-            Some(CaptionUpdate::ReplacePartial { .. })
-        ));
+        assert!(matches!(update, Some(CaptionUpdate::ReplacePartial { .. })));
         stop_session(handle).unwrap();
         assert!(destroy_boundary(handle));
         assert_eq!(stop_session(handle), Err(FfiError::InvalidHandle));
