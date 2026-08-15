@@ -14,10 +14,6 @@ SC-161 through SC-167 establish a platform-neutral, hardware-independent ASR tes
 
 ## Verification
 
-Run:
+`bash scripts/check-rust.sh` and the complete repository CI passed at commit `ec4a60a58036786e1eccec40ed968ec9d9c58404` in GitHub Actions run `31899531632` on 2026-08-15.
 
-```text
-bash scripts/check-rust.sh
-```
-
-SC-G9 may be closed when the pinned Rust formatting, Clippy, unit/integration, and documentation checks pass for this implementation. No physical hardware evidence is required for this gate.
+**SC-G9: PASS.** No physical hardware evidence is required for this gate.
