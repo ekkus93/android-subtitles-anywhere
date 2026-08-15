@@ -89,13 +89,13 @@ impl<E> ZipformerBackend<E> {
 }
 
 impl<E: ZipformerEngine> ZipformerBackend<E> {
-    fn event(&mut self, result: ZipformerResult, is_final: bool) -> Option<CaptionEvent> {
+    fn event(&mut self, result: &ZipformerResult, is_final: bool) -> Option<CaptionEvent> {
         let text = result.text.trim();
         if text.is_empty() || (!is_final && text == self.last_text) {
             return None;
         }
         self.sequence = self.sequence.saturating_add(1);
-        self.last_text = text.to_owned();
+        text.clone_into(&mut self.last_text);
         Some(CaptionEvent {
             session_id: self.session_id?,
             sequence: self.sequence,
@@ -178,7 +178,7 @@ impl<E: ZipformerEngine> AsrBackend for ZipformerBackend<E> {
         let mut events = Vec::new();
         if let Some(result) = self.engine.decode()? {
             let endpoint = result.is_endpoint;
-            if let Some(event) = self.event(result, endpoint) {
+            if let Some(event) = self.event(&result, endpoint) {
                 events.push(event);
             }
             if endpoint {
@@ -197,6 +197,7 @@ impl<E: ZipformerEngine> AsrBackend for ZipformerBackend<E> {
         let events = self
             .engine
             .finish()?
+            .as_ref()
             .and_then(|result| self.event(result, true))
             .into_iter()
             .collect();
