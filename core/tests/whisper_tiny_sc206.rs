@@ -62,7 +62,10 @@ fn sc206_fixture_injection_scores_final_transcript_deterministically() {
 
     let events = fixture.inject(&mut backend, 41, 16_000).unwrap();
     let final_caption = events.iter().rev().find(|event| event.is_final).unwrap();
-    assert_eq!(normalize_transcript(&final_caption.text), fixture.transcript.to_lowercase());
+    assert_eq!(
+        normalize_transcript(&final_caption.text),
+        fixture.transcript.to_lowercase()
+    );
     assert!(word_error_rate(&fixture.transcript, &final_caption.text) < f64::EPSILON);
     assert!(character_error_rate(&fixture.transcript, &final_caption.text) < f64::EPSILON);
 }
