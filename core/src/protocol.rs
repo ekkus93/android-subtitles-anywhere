@@ -60,10 +60,7 @@ pub enum ProtocolError {
     UnsupportedMessage(u8),
     ReservedFlags(u8),
     OversizedPayload(u32),
-    InvalidLength {
-        message: MessageType,
-        actual: usize,
-    },
+    InvalidLength { message: MessageType, actual: usize },
     Integrity,
     InvalidField,
     StaleSession,
