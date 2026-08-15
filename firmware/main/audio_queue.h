@@ -23,8 +23,18 @@ typedef struct {
     size_t high_water_blocks;
 } sc_audio_metrics_t;
 
-void sc_audio_queue_init(void);
-bool sc_audio_queue_try_push(const uint8_t *data, size_t length, uint32_t timestamp_ms);
-bool sc_audio_queue_try_pop(sc_audio_block_t *block);
-size_t sc_audio_queue_count(void);
-sc_audio_metrics_t sc_audio_queue_metrics(void);
+typedef struct {
+    sc_audio_block_t slots[SC_AUDIO_QUEUE_SLOT_COUNT];
+    size_t head;
+    size_t tail;
+    size_t count;
+    uint32_t last_callback_ms;
+    sc_audio_metrics_t metrics;
+} sc_audio_queue_t;
+
+void sc_audio_queue_reset(sc_audio_queue_t *queue);
+bool sc_audio_queue_push(sc_audio_queue_t *queue, const uint8_t *data, size_t length,
+                         uint32_t timestamp_ms);
+bool sc_audio_queue_pop(sc_audio_queue_t *queue, sc_audio_block_t *block);
+size_t sc_audio_queue_depth(const sc_audio_queue_t *queue);
+sc_audio_metrics_t sc_audio_queue_get_metrics(const sc_audio_queue_t *queue);
