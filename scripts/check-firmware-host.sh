@@ -15,3 +15,9 @@ mkdir -p .tmp/firmware-host
   firmware/main/return_audio.c tests/host/test_return_audio.c \
   -o .tmp/firmware-host/test_return_audio
 .tmp/firmware-host/test_return_audio
+
+"${cc}" -std=c11 -Wall -Wextra -Werror -Wpedantic \
+  -Ifirmware/main \
+  firmware/main/protocol_v1.c firmware/main/transport_state.c tests/host/test_transport.c \
+  -o .tmp/firmware-host/test_transport
+.tmp/firmware-host/test_transport
