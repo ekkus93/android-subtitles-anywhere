@@ -1,16 +1,37 @@
 //! Platform-neutral mobile boundary for validated protocol-v1 events.
 
-use crate::protocol::{decode, Frame, MessageType, PeerState, ProtocolError, SequenceEvent};
+use crate::protocol::{Frame, MessageType, PeerState, ProtocolError, SequenceEvent, decode};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MobileEvent {
-    Hello { boot_id: u64, rebooted: bool },
-    AudioFormat { session_id: u64, payload: Vec<u8> },
-    AudioData { session_id: u64, timestamp_ms: u32, payload: Vec<u8> },
-    Status { session_id: u64, payload: Vec<u8> },
-    Diagnostics { session_id: u64, payload: Vec<u8> },
-    Error { session_id: u64, payload: Vec<u8> },
-    SequenceGap { missing: u32 },
+    Hello {
+        boot_id: u64,
+        rebooted: bool,
+    },
+    AudioFormat {
+        session_id: u64,
+        payload: Vec<u8>,
+    },
+    AudioData {
+        session_id: u64,
+        timestamp_ms: u32,
+        payload: Vec<u8>,
+    },
+    Status {
+        session_id: u64,
+        payload: Vec<u8>,
+    },
+    Diagnostics {
+        session_id: u64,
+        payload: Vec<u8>,
+    },
+    Error {
+        session_id: u64,
+        payload: Vec<u8>,
+    },
+    SequenceGap {
+        missing: u32,
+    },
     SequenceDuplicate,
     SequenceReset,
 }
