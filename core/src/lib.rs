@@ -12,7 +12,7 @@ pub mod models {}
 pub mod protocol;
 pub mod session {}
 pub mod transport;
-pub mod vad {}
+pub mod vad;
 pub mod whisper;
 pub mod whisper_base;
 pub mod zipformer;
