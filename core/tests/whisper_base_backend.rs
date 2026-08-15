@@ -138,9 +138,6 @@ fn base_language_selection_and_cancel_are_explicit() {
     backend.start_session(3).unwrap();
     backend.cancel();
     let engine = backend.into_engine();
-    assert_eq!(
-        engine.policies,
-        [LanguagePolicy::Explicit("es".to_owned())]
-    );
+    assert_eq!(engine.policies, [LanguagePolicy::Explicit("es".to_owned())]);
     assert!(engine.cancelled);
 }
