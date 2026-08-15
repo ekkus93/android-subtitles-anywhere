@@ -129,8 +129,16 @@ fn endpoint_emits_final_and_resets_stream() {
 fn stale_session_and_unsupported_language_are_explicit() {
     let mut backend = ZipformerBackend::new(FakeEngine::default());
     backend.load().unwrap();
-    assert!(backend.set_language(LanguagePolicy::Explicit("en".to_owned())).is_ok());
-    assert!(backend.set_language(LanguagePolicy::Explicit("fr".to_owned())).is_err());
+    assert!(
+        backend
+            .set_language(LanguagePolicy::Explicit("en".to_owned()))
+            .is_ok()
+    );
+    assert!(
+        backend
+            .set_language(LanguagePolicy::Explicit("fr".to_owned()))
+            .is_err()
+    );
     backend.start_session(3).unwrap();
     assert_eq!(
         backend.push_audio(AudioChunk {
