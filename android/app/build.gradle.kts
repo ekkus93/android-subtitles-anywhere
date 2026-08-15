@@ -50,6 +50,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.core:core-ktx:1.18.0")
+    implementation("com.github.mik3y:usb-serial-for-android:3.9.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
