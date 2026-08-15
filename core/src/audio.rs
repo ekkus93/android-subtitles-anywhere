@@ -141,6 +141,11 @@ pub enum PcmError {
 /// # Errors
 ///
 /// Returns `PcmError::IncompleteStereoFrame` for an odd sample count.
+///
+/// # Panics
+///
+/// This function does not panic for valid complete stereo input. The checked conversion can only
+/// fail if the arithmetic mean of two `i16` values is outside the `i16` range, which is impossible.
 pub fn stereo_to_mono(samples: &[i16]) -> Result<Vec<i16>, PcmError> {
     if !samples.len().is_multiple_of(2) {
         return Err(PcmError::IncompleteStereoFrame);
@@ -162,6 +167,12 @@ pub fn stereo_to_mono(samples: &[i16]) -> Result<Vec<i16>, PcmError> {
 /// # Errors
 ///
 /// Returns `PcmError::InvalidSampleRate` when either rate is zero.
+///
+/// # Panics
+///
+/// This function does not panic for representable input slices and nonzero sample rates. Its checked
+/// numeric conversions operate on values bounded by `u32` rates or interpolation between `i16`
+/// samples, so their `expect` invariants cannot fail.
 pub fn resample_mono_linear(
     input: &[i16],
     input_rate_hz: u32,
