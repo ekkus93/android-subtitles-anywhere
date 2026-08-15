@@ -1,5 +1,6 @@
 #include "a2dp_sink.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include "audio_queue.h"
@@ -27,6 +28,23 @@ static void audio_data_callback(const uint8_t *data, uint32_t length)
     }
 }
 
+static void update_sbc_format(const esp_a2d_cie_sbc_t *sbc)
+{
+    if ((sbc->samp_freq & ESP_A2D_SBC_CIE_SF_32K) != 0U) {
+        s_status.sample_rate_hz = 32000U;
+    } else if ((sbc->samp_freq & ESP_A2D_SBC_CIE_SF_44K) != 0U) {
+        s_status.sample_rate_hz = 44100U;
+    } else if ((sbc->samp_freq & ESP_A2D_SBC_CIE_SF_48K) != 0U) {
+        s_status.sample_rate_hz = 48000U;
+    } else if ((sbc->samp_freq & ESP_A2D_SBC_CIE_SF_16K) != 0U) {
+        s_status.sample_rate_hz = 16000U;
+    } else {
+        s_status.sample_rate_hz = 0U;
+    }
+
+    s_status.channels = (sbc->ch_mode == ESP_A2D_SBC_CIE_CH_MODE_MONO) ? 1U : 2U;
+}
+
 static void a2dp_event_callback(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
     switch (event) {
@@ -43,17 +61,7 @@ static void a2dp_event_callback(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *pa
         break;
     case ESP_A2D_AUDIO_CFG_EVT:
         if (param->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
-            const uint8_t octet0 = param->audio_cfg.mcc.cie.sbc[0];
-            if ((octet0 & (1U << 6)) != 0U) {
-                s_status.sample_rate_hz = 32'000U;
-            } else if ((octet0 & (1U << 5)) != 0U) {
-                s_status.sample_rate_hz = 44'100U;
-            } else if ((octet0 & (1U << 4)) != 0U) {
-                s_status.sample_rate_hz = 48'000U;
-            } else {
-                s_status.sample_rate_hz = 16'000U;
-            }
-            s_status.channels = ((octet0 & 0x0fU) != 0U) ? 2U : 1U;
+            update_sbc_format(&param->audio_cfg.mcc.cie.sbc_info);
             ESP_LOGI(TAG, "A2DP SBC format=%" PRIu32 " Hz, %u channels",
                      s_status.sample_rate_hz, s_status.channels);
         }
