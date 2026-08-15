@@ -1,4 +1,4 @@
-//! Windowed Whisper Tiny multilingual adapter behind the common ASR contract.
+//! Shared windowed Whisper multilingual adapter behind the common ASR contract.
 
 use crate::asr::{AsrBackend, AsrError, AudioChunk, LanguagePolicy};
 use crate::captions::CaptionEvent;
@@ -39,8 +39,9 @@ pub trait WhisperEngine {
     fn cancel(&mut self);
 }
 
-pub struct WhisperTinyBackend<E> {
+pub struct WhisperBackend<E> {
     engine: E,
+    backend_id: &'static str,
     loaded: bool,
     session_id: Option<u64>,
     sequence: u64,
@@ -50,11 +51,12 @@ pub struct WhisperTinyBackend<E> {
     last_text: String,
 }
 
-impl<E> WhisperTinyBackend<E> {
+impl<E> WhisperBackend<E> {
     #[must_use]
-    pub fn new(engine: E) -> Self {
+    pub fn new(engine: E, backend_id: &'static str) -> Self {
         Self {
             engine,
+            backend_id,
             loaded: false,
             session_id: None,
             sequence: 0,
@@ -71,7 +73,7 @@ impl<E> WhisperTinyBackend<E> {
     }
 }
 
-impl<E: WhisperEngine> WhisperTinyBackend<E> {
+impl<E: WhisperEngine> WhisperBackend<E> {
     fn caption(&mut self, result: &WhisperResult, is_final: bool) -> Option<CaptionEvent> {
         let text = result.text.trim();
         if text.is_empty() || (!is_final && text == self.last_text) {
@@ -92,7 +94,7 @@ impl<E: WhisperEngine> WhisperTinyBackend<E> {
             source_start_ms: start_ms,
             source_end_ms: end_ms,
             confidence: result.confidence,
-            backend_id: BACKEND_ID.to_owned(),
+            backend_id: self.backend_id.to_owned(),
         })
     }
 
@@ -114,9 +116,9 @@ impl<E: WhisperEngine> WhisperTinyBackend<E> {
     }
 }
 
-impl<E: WhisperEngine> AsrBackend for WhisperTinyBackend<E> {
+impl<E: WhisperEngine> AsrBackend for WhisperBackend<E> {
     fn id(&self) -> &str {
-        BACKEND_ID
+        self.backend_id
     }
 
     fn load(&mut self) -> Result<(), AsrError> {
@@ -196,5 +198,53 @@ impl<E: WhisperEngine> AsrBackend for WhisperTinyBackend<E> {
         self.session_id = None;
         self.buffer.clear();
         self.last_text.clear();
+    }
+}
+
+pub struct WhisperTinyBackend<E>(WhisperBackend<E>);
+
+impl<E> WhisperTinyBackend<E> {
+    #[must_use]
+    pub fn new(engine: E) -> Self {
+        Self(WhisperBackend::new(engine, BACKEND_ID))
+    }
+
+    #[must_use]
+    pub fn into_engine(self) -> E {
+        self.0.into_engine()
+    }
+}
+
+impl<E: WhisperEngine> AsrBackend for WhisperTinyBackend<E> {
+    fn id(&self) -> &str {
+        self.0.id()
+    }
+
+    fn load(&mut self) -> Result<(), AsrError> {
+        self.0.load()
+    }
+
+    fn unload(&mut self) {
+        self.0.unload();
+    }
+
+    fn set_language(&mut self, policy: LanguagePolicy) -> Result<(), AsrError> {
+        self.0.set_language(policy)
+    }
+
+    fn start_session(&mut self, session_id: u64) -> Result<(), AsrError> {
+        self.0.start_session(session_id)
+    }
+
+    fn push_audio(&mut self, chunk: AudioChunk<'_>) -> Result<Vec<CaptionEvent>, AsrError> {
+        self.0.push_audio(chunk)
+    }
+
+    fn finish(&mut self, session_id: u64) -> Result<Vec<CaptionEvent>, AsrError> {
+        self.0.finish(session_id)
+    }
+
+    fn cancel(&mut self) {
+        self.0.cancel();
     }
 }
