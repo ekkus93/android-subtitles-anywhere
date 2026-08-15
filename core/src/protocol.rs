@@ -117,7 +117,8 @@ pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
             actual: frame.payload.len(),
         });
     }
-    let payload_len = u32::try_from(frame.payload.len()).map_err(|_| ProtocolError::InvalidField)?;
+    let payload_len =
+        u32::try_from(frame.payload.len()).map_err(|_| ProtocolError::InvalidField)?;
     let mut out = Vec::with_capacity(HEADER_LEN + frame.payload.len());
     out.extend_from_slice(&MAGIC);
     out.extend_from_slice(&[
