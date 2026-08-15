@@ -44,6 +44,15 @@ jobs:
         run: |
           set -euo pipefail
           test "$(gradle --version | sed -n 's/^Gradle //p' | head -n1)" = "9.5.0"
+      - name: Install pinned Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          NDK_VERSION="27.2.12479018"
+          yes | sdkmanager "ndk;${NDK_VERSION}" >/dev/null
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}" >> "${GITHUB_ENV}"
+      - name: Cross-build Rust JNI library
+        run: bash scripts/build-android-rust.sh
       - name: Build, unit test, and lint
         run: bash scripts/check-android.sh
 
@@ -80,7 +89,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '(^|/)(target|build)/|\.apk$|\.aab$|\.elf$|\.bin$' ; then
+          if git ls-files | grep -E '(^|/)(target|build)/|\.apk$|\.aab$|\.elf$|\.bin$|\.so$' ; then
             echo 'Tracked build/release product detected.' >&2
             exit 1
           fi
@@ -91,6 +100,7 @@ jobs:
           test "$(tr -d '[:space:]' < firmware/IDF_VERSION)" = "v5.5.5"
           grep -Fq 'channel = "1.88.0"' rust-toolchain.toml
           grep -Fq 'gradle-9.5.0-bin.zip' android/gradle/wrapper/gradle-wrapper.properties
+          grep -Fq 'NDK_VERSION="27.2.12479018"' .github/workflows/ci.yml
       - name: Check whitespace
         run: git diff --check
 
