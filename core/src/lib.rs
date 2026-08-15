@@ -14,6 +14,7 @@ pub mod session {}
 pub mod transport;
 pub mod vad {}
 pub mod whisper;
+pub mod whisper_base;
 pub mod zipformer;
 
 /// Core semantic version exposed to platform adapters and diagnostics.
