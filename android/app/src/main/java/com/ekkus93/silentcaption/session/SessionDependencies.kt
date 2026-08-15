@@ -18,10 +18,10 @@ class RustCoreSessionDependency(
     private var started = false
 
     override fun start(sessionId: Long): Boolean {
-        if (started) return true
-        if (!rust.startSession(sessionId)) return false
-        started = true
-        return true
+        if (!started && rust.startSession(sessionId)) {
+            started = true
+        }
+        return started
     }
 
     override fun stop() {
@@ -42,20 +42,18 @@ class UsbSessionDependency(
         get() = isReady()
 
     override fun start(sessionId: Long): Boolean {
-        if (controller != null) return true
-        if (sessionId <= 0L || !ready) return false
-        return try {
-            controllerFactory().also {
-                it.start()
-                controller = it
-            }
-            true
-        } catch (_: RuntimeException) {
-            controller?.close()
-            controller = null
-            false
+        if (controller == null && sessionId > 0L && ready) {
+            controller = createController()
         }
+        return controller != null
     }
+
+    private fun createController(): UsbSessionController? =
+        try {
+            controllerFactory().also { it.start() }
+        } catch (_: RuntimeException) {
+            null
+        }
 
     override fun stop() {
         controller?.close()
@@ -81,10 +79,10 @@ class PlatformSessionDependency(
         get() = isReady()
 
     override fun start(sessionId: Long): Boolean {
-        if (started) return true
-        if (sessionId <= 0L || !ready || !onStart(sessionId)) return false
-        started = true
-        return true
+        if (!started && sessionId > 0L && ready && onStart(sessionId)) {
+            started = true
+        }
+        return started
     }
 
     override fun stop() {
