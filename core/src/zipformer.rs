@@ -31,34 +31,28 @@ pub trait ZipformerEngine {
     /// # Errors
     /// Returns a stable ASR error if initialization fails.
     fn load(&mut self) -> Result<(), AsrError>;
-
     /// Releases all runtime resources.
     fn unload(&mut self);
-
     /// Starts or resets the recognizer stream.
     ///
     /// # Errors
     /// Returns a stable ASR error if a stream cannot be created.
     fn start_stream(&mut self) -> Result<(), AsrError>;
-
     /// Accepts canonical 16 kHz mono PCM.
     ///
     /// # Errors
     /// Returns a stable ASR error if audio cannot be accepted.
     fn accept_samples(&mut self, samples: &[i16]) -> Result<(), AsrError>;
-
     /// Decodes available frames and returns the current transcript snapshot.
     ///
     /// # Errors
     /// Returns a stable ASR error if recognition fails.
     fn decode(&mut self) -> Result<Option<ZipformerResult>, AsrError>;
-
     /// Signals end-of-input and returns the final transcript snapshot.
     ///
     /// # Errors
     /// Returns a stable ASR error if finalization fails.
     fn finish(&mut self) -> Result<Option<ZipformerResult>, AsrError>;
-
     /// Cancels and resets the active stream.
     fn cancel(&mut self);
 }
@@ -141,9 +135,8 @@ impl<E: ZipformerEngine> AsrBackend for ZipformerBackend<E> {
             return Err(AsrError::NotLoaded);
         }
         match policy {
-            LanguagePolicy::Auto | LanguagePolicy::Explicit(ref language) if language == "en" => {
-                Ok(())
-            }
+            LanguagePolicy::Auto => Ok(()),
+            LanguagePolicy::Explicit(language) if language == "en" => Ok(()),
             LanguagePolicy::Explicit(_) => Err(AsrError::Backend(
                 "selected Zipformer model supports English only".to_owned(),
             )),
