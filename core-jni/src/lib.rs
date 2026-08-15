@@ -20,7 +20,8 @@ impl BoundaryStore {
     fn create(&mut self) -> u64 {
         self.next_handle = self.next_handle.saturating_add(1).max(1);
         let handle = self.next_handle;
-        self.boundaries.insert(handle, MobileProtocolBoundary::default());
+        self.boundaries
+            .insert(handle, MobileProtocolBoundary::default());
         handle
     }
 
@@ -80,13 +81,27 @@ impl From<MobileEvent> for FfiEvent {
                 numeric_value: boot_id,
                 payload: vec![u8::from(rebooted)],
             },
-            MobileEvent::AudioFormat { session_id, payload } => Self::payload(2, session_id, 0, payload),
-            MobileEvent::AudioData { session_id, timestamp_ms, payload } => {
-                Self::payload(3, session_id, timestamp_ms, payload)
-            }
-            MobileEvent::Status { session_id, payload } => Self::payload(4, session_id, 0, payload),
-            MobileEvent::Diagnostics { session_id, payload } => Self::payload(5, session_id, 0, payload),
-            MobileEvent::Error { session_id, payload } => Self::payload(6, session_id, 0, payload),
+            MobileEvent::AudioFormat {
+                session_id,
+                payload,
+            } => Self::payload(2, session_id, 0, payload),
+            MobileEvent::AudioData {
+                session_id,
+                timestamp_ms,
+                payload,
+            } => Self::payload(3, session_id, timestamp_ms, payload),
+            MobileEvent::Status {
+                session_id,
+                payload,
+            } => Self::payload(4, session_id, 0, payload),
+            MobileEvent::Diagnostics {
+                session_id,
+                payload,
+            } => Self::payload(5, session_id, 0, payload),
+            MobileEvent::Error {
+                session_id,
+                payload,
+            } => Self::payload(6, session_id, 0, payload),
             MobileEvent::SequenceGap { missing } => Self::numeric(7, missing.into()),
             MobileEvent::SequenceDuplicate => Self::numeric(8, 0),
             MobileEvent::SequenceReset => Self::numeric(9, 0),
@@ -96,32 +111,59 @@ impl From<MobileEvent> for FfiEvent {
 
 impl FfiEvent {
     fn payload(kind: u8, session_id: u64, timestamp_ms: u32, payload: Vec<u8>) -> Self {
-        Self { kind, session_id, timestamp_ms, numeric_value: 0, payload }
+        Self {
+            kind,
+            session_id,
+            timestamp_ms,
+            numeric_value: 0,
+            payload,
+        }
     }
 
     fn numeric(kind: u8, numeric_value: u64) -> Self {
-        Self { kind, session_id: 0, timestamp_ms: 0, numeric_value, payload: Vec::new() }
+        Self {
+            kind,
+            session_id: 0,
+            timestamp_ms: 0,
+            numeric_value,
+            payload: Vec::new(),
+        }
     }
 }
 
 pub fn create_boundary() -> u64 {
-    BOUNDARIES.lock().expect("boundary store poisoned").create()
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .create()
 }
 
 pub fn destroy_boundary(handle: u64) -> bool {
-    BOUNDARIES.lock().expect("boundary store poisoned").destroy(handle)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .destroy(handle)
 }
 
 pub fn reset_boundary(handle: u64) -> bool {
-    BOUNDARIES.lock().expect("boundary store poisoned").reset(handle)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .reset(handle)
 }
 
 pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").start_session(handle, session_id)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .start_session(handle, session_id)
 }
 
 pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").accept_frame(handle, frame)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .accept_frame(handle, frame)
 }
 
 fn encode_result(result: Result<Vec<FfiEvent>, FfiError>) -> Vec<u8> {
@@ -184,11 +226,7 @@ pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_
     handle: jlong,
     session_id: jlong,
 ) -> jboolean {
-    u8::from(
-        handle > 0
-            && session_id > 0
-            && start_session(handle as u64, session_id as u64).is_ok(),
-    )
+    u8::from(handle > 0 && session_id > 0 && start_session(handle as u64, session_id as u64).is_ok())
 }
 
 #[unsafe(no_mangle)]
