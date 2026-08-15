@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+bash scripts/check-firmware-host.sh
+
 if ! command -v idf.py >/dev/null 2>&1; then
   echo "idf.py is not available; activate the pinned ESP-IDF environment first." >&2
   exit 1
