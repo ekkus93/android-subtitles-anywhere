@@ -79,8 +79,9 @@ class PlatformSessionDependency(
         get() = isReady()
 
     override fun start(sessionId: Long): Boolean {
-        if (!started && sessionId > 0L && ready && onStart(sessionId)) {
-            started = true
+        val canStart = sessionId > 0L && ready
+        if (!started && canStart) {
+            started = onStart(sessionId)
         }
         return started
     }
