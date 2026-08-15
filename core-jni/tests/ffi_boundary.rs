@@ -39,7 +39,10 @@ fn handle_lifecycle_rejects_use_after_destroy() {
     assert!(handle > 0);
     assert!(accept_frame(handle, &hello(1)).is_ok());
     assert!(destroy_boundary(handle));
-    assert_eq!(accept_frame(handle, &hello(1)), Err(FfiError::InvalidHandle));
+    assert_eq!(
+        accept_frame(handle, &hello(1)),
+        Err(FfiError::InvalidHandle)
+    );
     assert!(!destroy_boundary(handle));
 }
 
@@ -75,7 +78,9 @@ fn caption_and_discontinuity_semantics_cross_ffi_boundary() {
     start_session(handle, 7).unwrap();
     assert_eq!(
         accept_caption(handle, &caption(7, 1, "hello", false)).unwrap(),
-        Some(CaptionUpdate::ReplacePartial { text: "hello".to_owned() })
+        Some(CaptionUpdate::ReplacePartial {
+            text: "hello".to_owned()
+        })
     );
     assert_eq!(
         discontinuity(handle, DiscontinuityReason::UsbGap).unwrap(),
@@ -86,10 +91,15 @@ fn caption_and_discontinuity_semantics_cross_ffi_boundary() {
     );
     assert_eq!(
         accept_caption(handle, &caption(7, 2, "hello world", true)).unwrap(),
-        Some(CaptionUpdate::CommitFinal { text: "hello world".to_owned() })
+        Some(CaptionUpdate::CommitFinal {
+            text: "hello world".to_owned()
+        })
     );
     stop_session(handle).unwrap();
-    assert_eq!(accept_caption(handle, &caption(7, 3, "stale", false)).unwrap(), None);
+    assert_eq!(
+        accept_caption(handle, &caption(7, 3, "stale", false)).unwrap(),
+        None
+    );
     destroy_boundary(handle);
 }
 
@@ -118,7 +128,10 @@ fn repeated_lifecycle_cycles_do_not_reuse_live_handles_or_leak_state() {
         select_backend(handle, BackendSelection::Zipformer).unwrap();
         start_session(handle, cycle).unwrap();
         let update = accept_caption(handle, &caption(cycle, 1, "partial", false)).unwrap();
-        assert!(matches!(update, Some(CaptionUpdate::ReplacePartial { .. })));
+        assert!(matches!(
+            update,
+            Some(CaptionUpdate::ReplacePartial { .. })
+        ));
         stop_session(handle).unwrap();
         assert!(destroy_boundary(handle));
         assert_eq!(stop_session(handle), Err(FfiError::InvalidHandle));
