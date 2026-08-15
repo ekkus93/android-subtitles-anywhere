@@ -8,7 +8,7 @@ pub mod audio {}
 pub mod captions {}
 pub mod diagnostics {}
 pub mod models {}
-pub mod protocol {}
+pub mod protocol;
 pub mod session {}
 pub mod transport {}
 pub mod vad {}
