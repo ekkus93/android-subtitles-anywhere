@@ -13,6 +13,7 @@ pub mod protocol;
 pub mod session {}
 pub mod transport;
 pub mod vad {}
+pub mod zipformer;
 
 /// Core semantic version exposed to platform adapters and diagnostics.
 pub const CORE_VERSION: &str = env!("CARGO_PKG_VERSION");
