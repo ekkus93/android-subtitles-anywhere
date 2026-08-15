@@ -2,77 +2,68 @@
 
 #include <string.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-
-static QueueHandle_t s_queue;
-static sc_audio_metrics_t s_metrics;
-static uint32_t s_last_callback_ms;
-
-void sc_audio_queue_init(void)
+void sc_audio_queue_reset(sc_audio_queue_t *queue)
 {
-    memset(&s_metrics, 0, sizeof(s_metrics));
-    s_last_callback_ms = 0;
-    s_queue = xQueueCreate(SC_AUDIO_QUEUE_SLOT_COUNT, sizeof(sc_audio_block_t));
+    if (queue != NULL) {
+        memset(queue, 0, sizeof(*queue));
+    }
 }
 
-bool sc_audio_queue_try_push(const uint8_t *data, size_t length, uint32_t timestamp_ms)
+bool sc_audio_queue_push(sc_audio_queue_t *queue, const uint8_t *data, size_t length,
+                         uint32_t timestamp_ms)
 {
-    s_metrics.callbacks++;
-    s_metrics.callback_bytes += length;
+    if (queue == NULL) {
+        return false;
+    }
 
-    if (s_last_callback_ms != 0U) {
-        const uint32_t interval = timestamp_ms - s_last_callback_ms;
-        s_metrics.last_callback_interval_ms = interval;
-        if (interval > s_metrics.max_callback_interval_ms) {
-            s_metrics.max_callback_interval_ms = interval;
+    queue->metrics.callbacks++;
+    queue->metrics.callback_bytes += length;
+    if (queue->last_callback_ms != 0U) {
+        const uint32_t interval = timestamp_ms - queue->last_callback_ms;
+        queue->metrics.last_callback_interval_ms = interval;
+        if (interval > queue->metrics.max_callback_interval_ms) {
+            queue->metrics.max_callback_interval_ms = interval;
         }
     }
-    s_last_callback_ms = timestamp_ms;
+    queue->last_callback_ms = timestamp_ms;
 
-    if ((s_queue == NULL) || (data == NULL) || (length == 0U) ||
-        (length > SC_AUDIO_QUEUE_SLOT_BYTES)) {
-        s_metrics.dropped_blocks++;
-        s_metrics.dropped_bytes += length;
+    if ((data == NULL) || (length == 0U) || (length > SC_AUDIO_QUEUE_SLOT_BYTES) ||
+        (queue->count == SC_AUDIO_QUEUE_SLOT_COUNT)) {
+        queue->metrics.dropped_blocks++;
+        queue->metrics.dropped_bytes += length;
         return false;
     }
 
-    sc_audio_block_t block = {
-        .length = length,
-        .timestamp_ms = timestamp_ms,
-    };
-    memcpy(block.data, data, length);
-
-    if (xQueueSend(s_queue, &block, 0) != pdPASS) {
-        s_metrics.dropped_blocks++;
-        s_metrics.dropped_bytes += length;
-        return false;
-    }
-
-    const UBaseType_t occupancy = uxQueueMessagesWaiting(s_queue);
-    if ((size_t)occupancy > s_metrics.high_water_blocks) {
-        s_metrics.high_water_blocks = (size_t)occupancy;
+    sc_audio_block_t *block = &queue->slots[queue->tail];
+    memcpy(block->data, data, length);
+    block->length = length;
+    block->timestamp_ms = timestamp_ms;
+    queue->tail = (queue->tail + 1U) % SC_AUDIO_QUEUE_SLOT_COUNT;
+    queue->count++;
+    if (queue->count > queue->metrics.high_water_blocks) {
+        queue->metrics.high_water_blocks = queue->count;
     }
     return true;
 }
 
-bool sc_audio_queue_try_pop(sc_audio_block_t *block)
+bool sc_audio_queue_pop(sc_audio_queue_t *queue, sc_audio_block_t *block)
 {
-    if ((s_queue == NULL) || (block == NULL)) {
+    if ((queue == NULL) || (block == NULL) || (queue->count == 0U)) {
         return false;
     }
-    return xQueueReceive(s_queue, block, 0) == pdPASS;
+    *block = queue->slots[queue->head];
+    queue->head = (queue->head + 1U) % SC_AUDIO_QUEUE_SLOT_COUNT;
+    queue->count--;
+    return true;
 }
 
-size_t sc_audio_queue_count(void)
+size_t sc_audio_queue_depth(const sc_audio_queue_t *queue)
 {
-    if (s_queue == NULL) {
-        return 0U;
-    }
-    return (size_t)uxQueueMessagesWaiting(s_queue);
+    return queue == NULL ? 0U : queue->count;
 }
 
-sc_audio_metrics_t sc_audio_queue_metrics(void)
+sc_audio_metrics_t sc_audio_queue_get_metrics(const sc_audio_queue_t *queue)
 {
-    return s_metrics;
+    const sc_audio_metrics_t empty = {0};
+    return queue == NULL ? empty : queue->metrics;
 }
