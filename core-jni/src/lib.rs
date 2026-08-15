@@ -64,7 +64,10 @@ impl BoundaryStore {
     }
 
     fn select_backend(&mut self, handle: u64, backend: BackendSelection) -> Result<(), FfiError> {
-        let boundary = self.boundaries.get_mut(&handle).ok_or(FfiError::InvalidHandle)?;
+        let boundary = self
+            .boundaries
+            .get_mut(&handle)
+            .ok_or(FfiError::InvalidHandle)?;
         if boundary.session_id.is_some() {
             return Err(FfiError::SessionActive);
         }
@@ -73,18 +76,27 @@ impl BoundaryStore {
     }
 
     fn start_session(&mut self, handle: u64, session_id: u64) -> Result<(), FfiError> {
-        let boundary = self.boundaries.get_mut(&handle).ok_or(FfiError::InvalidHandle)?;
+        let boundary = self
+            .boundaries
+            .get_mut(&handle)
+            .ok_or(FfiError::InvalidHandle)?;
         if boundary.session_id.is_some() {
             return Err(FfiError::SessionActive);
         }
-        boundary.protocol.start_session(session_id).map_err(FfiError::Protocol)?;
+        boundary
+            .protocol
+            .start_session(session_id)
+            .map_err(FfiError::Protocol)?;
         boundary.captions.start_session(session_id);
         boundary.session_id = Some(session_id);
         Ok(())
     }
 
     fn stop_session(&mut self, handle: u64) -> Result<(), FfiError> {
-        let boundary = self.boundaries.get_mut(&handle).ok_or(FfiError::InvalidHandle)?;
+        let boundary = self
+            .boundaries
+            .get_mut(&handle)
+            .ok_or(FfiError::InvalidHandle)?;
         boundary.captions.stop_session();
         boundary.protocol.reset();
         boundary.session_id = None;
@@ -102,7 +114,11 @@ impl BoundaryStore {
         Ok(events.into_iter().map(FfiEvent::from).collect())
     }
 
-    fn accept_caption(&mut self, handle: u64, event: &CaptionEvent) -> Result<Option<CaptionUpdate>, FfiError> {
+    fn accept_caption(
+        &mut self,
+        handle: u64,
+        event: &CaptionEvent,
+    ) -> Result<Option<CaptionUpdate>, FfiError> {
         Ok(self
             .boundaries
             .get_mut(&handle)
@@ -111,7 +127,11 @@ impl BoundaryStore {
             .accept(event))
     }
 
-    fn discontinuity(&mut self, handle: u64, reason: DiscontinuityReason) -> Result<Vec<CaptionUpdate>, FfiError> {
+    fn discontinuity(
+        &mut self,
+        handle: u64,
+        reason: DiscontinuityReason,
+    ) -> Result<Vec<CaptionUpdate>, FfiError> {
         Ok(self
             .boundaries
             .get_mut(&handle)
@@ -171,11 +191,27 @@ impl From<MobileEvent> for FfiEvent {
                 numeric_value: boot_id,
                 payload: vec![u8::from(rebooted)],
             },
-            MobileEvent::AudioFormat { session_id, payload } => Self::payload(2, session_id, 0, payload),
-            MobileEvent::AudioData { session_id, timestamp_ms, payload } => Self::payload(3, session_id, timestamp_ms, payload),
-            MobileEvent::Status { session_id, payload } => Self::payload(4, session_id, 0, payload),
-            MobileEvent::Diagnostics { session_id, payload } => Self::payload(5, session_id, 0, payload),
-            MobileEvent::Error { session_id, payload } => Self::payload(6, session_id, 0, payload),
+            MobileEvent::AudioFormat {
+                session_id,
+                payload,
+            } => Self::payload(2, session_id, 0, payload),
+            MobileEvent::AudioData {
+                session_id,
+                timestamp_ms,
+                payload,
+            } => Self::payload(3, session_id, timestamp_ms, payload),
+            MobileEvent::Status {
+                session_id,
+                payload,
+            } => Self::payload(4, session_id, 0, payload),
+            MobileEvent::Diagnostics {
+                session_id,
+                payload,
+            } => Self::payload(5, session_id, 0, payload),
+            MobileEvent::Error {
+                session_id,
+                payload,
+            } => Self::payload(6, session_id, 0, payload),
             MobileEvent::SequenceGap { missing } => Self::numeric(7, missing.into()),
             MobileEvent::SequenceDuplicate => Self::numeric(8, 0),
             MobileEvent::SequenceReset => Self::numeric(9, 0),
@@ -185,11 +221,23 @@ impl From<MobileEvent> for FfiEvent {
 
 impl FfiEvent {
     fn payload(kind: u8, session_id: u64, timestamp_ms: u32, payload: Vec<u8>) -> Self {
-        Self { kind, session_id, timestamp_ms, numeric_value: 0, payload }
+        Self {
+            kind,
+            session_id,
+            timestamp_ms,
+            numeric_value: 0,
+            payload,
+        }
     }
 
     fn numeric(kind: u8, numeric_value: u64) -> Self {
-        Self { kind, session_id: 0, timestamp_ms: 0, numeric_value, payload: Vec::new() }
+        Self {
+            kind,
+            session_id: 0,
+            timestamp_ms: 0,
+            numeric_value,
+            payload: Vec::new(),
+        }
     }
 }
 
@@ -206,7 +254,10 @@ pub fn create_boundary() -> u64 {
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn destroy_boundary(handle: u64) -> bool {
-    BOUNDARIES.lock().expect("boundary store poisoned").destroy(handle)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .destroy(handle)
 }
 
 /// Resets protocol, caption, backend, and session state.
@@ -214,7 +265,10 @@ pub fn destroy_boundary(handle: u64) -> bool {
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn reset_boundary(handle: u64) -> bool {
-    BOUNDARIES.lock().expect("boundary store poisoned").reset(handle)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .reset(handle)
 }
 
 /// Selects the backend while no session is active.
@@ -225,7 +279,10 @@ pub fn reset_boundary(handle: u64) -> bool {
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn select_backend(handle: u64, backend: BackendSelection) -> Result<(), FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").select_backend(handle, backend)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .select_backend(handle, backend)
 }
 
 /// Starts a unique nonzero session.
@@ -236,7 +293,10 @@ pub fn select_backend(handle: u64, backend: BackendSelection) -> Result<(), FfiE
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").start_session(handle, session_id)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .start_session(handle, session_id)
 }
 
 /// Stops the current session idempotently and cancels its portable state.
@@ -247,7 +307,10 @@ pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn stop_session(handle: u64) -> Result<(), FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").stop_session(handle)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .stop_session(handle)
 }
 
 /// Validates one bounded protocol frame and returns typed events.
@@ -258,7 +321,10 @@ pub fn stop_session(handle: u64) -> Result<(), FfiError> {
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").accept_frame(handle, frame)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .accept_frame(handle, frame)
 }
 
 /// Applies portable partial/final caption stabilization.
@@ -269,7 +335,10 @@ pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
 pub fn accept_caption(handle: u64, event: &CaptionEvent) -> Result<Option<CaptionUpdate>, FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").accept_caption(handle, event)
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .accept_caption(handle, event)
 }
 
 /// Applies a transport/media discontinuity to portable caption state.
@@ -279,8 +348,14 @@ pub fn accept_caption(handle: u64, event: &CaptionEvent) -> Result<Option<Captio
 ///
 /// # Panics
 /// Panics if the process-global handle-store mutex is poisoned.
-pub fn discontinuity(handle: u64, reason: DiscontinuityReason) -> Result<Vec<CaptionUpdate>, FfiError> {
-    BOUNDARIES.lock().expect("boundary store poisoned").discontinuity(handle, reason)
+pub fn discontinuity(
+    handle: u64,
+    reason: DiscontinuityReason,
+) -> Result<Vec<CaptionUpdate>, FfiError> {
+    BOUNDARIES
+        .lock()
+        .expect("boundary store poisoned")
+        .discontinuity(handle, reason)
 }
 
 fn encode_result(result: Result<Vec<FfiEvent>, FfiError>) -> Vec<u8> {
@@ -303,38 +378,74 @@ fn encode_result(result: Result<Vec<FfiEvent>, FfiError>) -> Vec<u8> {
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeCreate(_env: JNIEnv, _class: JClass) -> jlong {
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeCreate(
+    _env: JNIEnv,
+    _class: JClass,
+) -> jlong {
     jlong::try_from(create_boundary()).unwrap_or(0)
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeDestroy(_env: JNIEnv, _class: JClass, handle: jlong) -> jboolean {
-    let Ok(handle) = u64::try_from(handle) else { return 0; };
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeDestroy(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) -> jboolean {
+    let Ok(handle) = u64::try_from(handle) else {
+        return 0;
+    };
     u8::from(handle > 0 && destroy_boundary(handle))
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeReset(_env: JNIEnv, _class: JClass, handle: jlong) -> jboolean {
-    let Ok(handle) = u64::try_from(handle) else { return 0; };
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeReset(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) -> jboolean {
+    let Ok(handle) = u64::try_from(handle) else {
+        return 0;
+    };
     u8::from(handle > 0 && reset_boundary(handle))
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeStartSession(_env: JNIEnv, _class: JClass, handle: jlong, session_id: jlong) -> jboolean {
-    let (Ok(handle), Ok(session_id)) = (u64::try_from(handle), u64::try_from(session_id)) else { return 0; };
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeStartSession(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+    session_id: jlong,
+) -> jboolean {
+    let (Ok(handle), Ok(session_id)) = (u64::try_from(handle), u64::try_from(session_id)) else {
+        return 0;
+    };
     u8::from(handle > 0 && session_id > 0 && start_session(handle, session_id).is_ok())
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeStopSession(_env: JNIEnv, _class: JClass, handle: jlong) -> jboolean {
-    let Ok(handle) = u64::try_from(handle) else { return 0; };
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeStopSession(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) -> jboolean {
+    let Ok(handle) = u64::try_from(handle) else {
+        return 0;
+    };
     u8::from(handle > 0 && stop_session(handle).is_ok())
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeAcceptFrame(env: JNIEnv, _class: JClass, handle: jlong, frame: JByteArray) -> jbyteArray {
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeAcceptFrame(
+    env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+    frame: JByteArray,
+) -> jbyteArray {
     let result = match u64::try_from(handle) {
-        Ok(handle) if handle > 0 => env.convert_byte_array(&frame).map_err(|_| FfiError::InvalidHandle).and_then(|bytes| accept_frame(handle, &bytes)),
+        Ok(handle) if handle > 0 => env
+            .convert_byte_array(&frame)
+            .map_err(|_| FfiError::InvalidHandle)
+            .and_then(|bytes| accept_frame(handle, &bytes)),
         _ => Err(FfiError::InvalidHandle),
     };
     match env.byte_array_from_slice(&encode_result(result)) {
