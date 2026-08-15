@@ -1,5 +1,7 @@
 use silent_caption_core::protocol::{Frame, MessageType, encode};
-use silent_caption_jni::{FfiError, accept_frame, create_boundary, destroy_boundary, reset_boundary, start_session};
+use silent_caption_jni::{
+    FfiError, accept_frame, create_boundary, destroy_boundary, reset_boundary, start_session,
+};
 
 fn hello(boot_id: u64) -> Vec<u8> {
     let mut payload = vec![0; 20];
@@ -21,7 +23,10 @@ fn handle_lifecycle_rejects_use_after_destroy() {
     assert!(handle > 0);
     assert!(accept_frame(handle, &hello(1)).is_ok());
     assert!(destroy_boundary(handle));
-    assert_eq!(accept_frame(handle, &hello(1)), Err(FfiError::InvalidHandle));
+    assert_eq!(
+        accept_frame(handle, &hello(1)),
+        Err(FfiError::InvalidHandle)
+    );
     assert!(!destroy_boundary(handle));
 }
 
