@@ -4,3 +4,7 @@ set -euo pipefail
 cargo fmt --manifest-path core/Cargo.toml --all -- --check
 cargo clippy --manifest-path core/Cargo.toml --all-targets --all-features -- -D warnings
 cargo test --manifest-path core/Cargo.toml --all-features --locked
+
+cargo fmt --manifest-path core-jni/Cargo.toml --all -- --check
+cargo clippy --manifest-path core-jni/Cargo.toml --all-targets --all-features -- -D warnings
+cargo test --manifest-path core-jni/Cargo.toml --all-features
