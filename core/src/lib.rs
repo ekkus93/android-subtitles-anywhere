@@ -7,6 +7,7 @@ pub mod asr {}
 pub mod audio;
 pub mod captions {}
 pub mod diagnostics;
+pub mod mobile;
 pub mod models {}
 pub mod protocol;
 pub mod session {}
