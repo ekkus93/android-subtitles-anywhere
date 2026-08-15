@@ -146,12 +146,13 @@ fn finish_flushes_short_audio_as_final_window() {
     let mut backend = WhisperTinyBackend::new(engine);
     backend.load().unwrap();
     backend.start_session(9).unwrap();
+    let samples = vec![0; 16_000];
     assert!(
         backend
             .push_audio(AudioChunk {
                 session_id: 9,
                 source_start_ms: 250,
-                samples: &[0; 16_000],
+                samples: &samples,
             })
             .unwrap()
             .is_empty()
