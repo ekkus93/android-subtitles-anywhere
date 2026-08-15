@@ -33,7 +33,7 @@ class CaptionSessionStateMachineTest {
         machine.accept(CaptionSessionEvent.StartRequested(9))
         val generation = machine.state.generation
         machine.accept(CaptionSessionEvent.StartRequested(10))
-        assertEquals(9, machine.state.sessionId)
+        assertEquals(9L, machine.state.sessionId)
         assertEquals(generation, machine.state.generation)
         machine.accept(CaptionSessionEvent.Started)
         machine.accept(CaptionSessionEvent.StopRequested)
