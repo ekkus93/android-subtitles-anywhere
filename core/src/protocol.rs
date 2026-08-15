@@ -108,7 +108,8 @@ pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
         return Err(ProtocolError::ReservedFlags(frame.flags));
     }
     if frame.payload.len() > MAX_PAYLOAD {
-        return Err(ProtocolError::OversizedPayload(frame.payload.len() as u32));
+        let reported_len = u32::try_from(frame.payload.len()).unwrap_or(u32::MAX);
+        return Err(ProtocolError::OversizedPayload(reported_len));
     }
     if !valid_length(frame.message_type, frame.payload.len()) {
         return Err(ProtocolError::InvalidLength {
@@ -116,6 +117,7 @@ pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
             actual: frame.payload.len(),
         });
     }
+    let payload_len = u32::try_from(frame.payload.len()).map_err(|_| ProtocolError::InvalidField)?;
     let mut out = Vec::with_capacity(HEADER_LEN + frame.payload.len());
     out.extend_from_slice(&MAGIC);
     out.extend_from_slice(&[
@@ -124,7 +126,7 @@ pub fn encode(frame: &Frame) -> Result<Vec<u8>, ProtocolError> {
         frame.message_type as u8,
         frame.flags,
     ]);
-    out.extend_from_slice(&(frame.payload.len() as u32).to_le_bytes());
+    out.extend_from_slice(&payload_len.to_le_bytes());
     out.extend_from_slice(&frame.sequence.to_le_bytes());
     out.extend_from_slice(&frame.session_id.to_le_bytes());
     out.extend_from_slice(&frame.timestamp_ms.to_le_bytes());
