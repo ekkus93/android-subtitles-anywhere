@@ -21,16 +21,22 @@ A cryptographic SHA-256 must be recorded by the model-management/download pipeli
 
 ## SC-223 — generalized Whisper behavior
 
-Base intentionally follows the same bounded rolling-window policy as Tiny:
+SC-223 is software-complete. Tiny and Base now delegate to one `WhisperBackend<E>` implementation in `core/src/whisper.rs`; model-specific wrappers contain identity/artifact metadata rather than copies of the streaming state machine.
 
-- canonical input: 16 kHz mono PCM;
-- window: 80,000 samples / 5 seconds;
-- step: 16,000 samples / 1 second;
-- overlap/context: 64,000 samples / 4 seconds;
-- duplicate partial text is suppressed;
-- final flush commits the remaining buffered audio.
+The shared implementation owns:
 
-The runtime engine abstraction and result type are shared with Tiny so the eventual concrete whisper.cpp Android runtime does not need separate model-specific bindings.
+- canonical 16 kHz mono PCM handling;
+- 80,000-sample / 5-second windows;
+- 16,000-sample / 1-second steps;
+- 64,000-sample / 4-second overlap/context;
+- duplicate-partial suppression;
+- final buffered-audio flush;
+- session validation and sequencing;
+- source-time accounting;
+- language-policy forwarding;
+- cancellation and lifecycle behavior.
+
+Base aliases its window constants to the shared Whisper constants so policy drift between Tiny and Base is mechanically prevented. Both wrappers retain distinct stable backend IDs.
 
 ## SC-224 — deterministic tests
 
@@ -45,7 +51,7 @@ The runtime engine abstraction and result type are shared with Tiny so the event
 - explicit language selection;
 - cancellation.
 
-These are host tests and do not claim real whisper.cpp inference performance.
+The existing Tiny tests exercise the same shared implementation through the Tiny wrapper, providing regression coverage that both model identities preserve the common streaming semantics. These are host tests and do not claim real whisper.cpp inference performance.
 
 ## SC-225 — hardware measurement boundary
 
@@ -62,6 +68,10 @@ Gate SC-G12 cannot close until this evidence exists.
 
 ## SC-226 — explicit performance warning contract
 
-The Base backend has a distinct stable backend ID (`whisper-base-multilingual`) and never aliases or silently substitutes Tiny. Device capability/performance policy must surface an explicit warning or failure when Base cannot be sustained. Silent model switching is prohibited.
+The Base backend has a distinct stable backend ID (`whisper-base-multilingual`) and never aliases or silently substitutes Tiny. The shared backend accepts an explicit backend identity and does not contain fallback/model-selection behavior. Therefore inference or capability failure cannot silently change the selected model inside the portable Whisper pipeline.
 
-The actual Android warning UI belongs to the later Android model/session-management blocks and remains to be integrated with SC-225 measurements.
+Device capability/performance policy must surface an explicit warning or failure when Base cannot be sustained. The actual Android warning UI belongs to the later Android model/session-management blocks and remains to be integrated with SC-225 measurements.
+
+## Software closure
+
+Subject to the repository Rust checks passing, SC-221, SC-222, SC-223, SC-224, and the portable-core portion of SC-226 are software-verifiable and complete. SC-225 remains open, and the Android warning presentation portion of SC-226 remains downstream work. Gate SC-G12 remains open until physical-device evidence exists.
