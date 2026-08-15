@@ -16,6 +16,8 @@ class NativeRustProtocolApi : RustProtocolApi, Closeable {
     fun startSession(sessionId: Long): Boolean =
         handle != 0L && sessionId > 0L && nativeStartSession(handle, sessionId)
 
+    fun stopSession(): Boolean = handle != 0L && nativeStopSession(handle)
+
     override fun reset() {
         if (handle != 0L) nativeReset(handle)
     }
@@ -56,6 +58,7 @@ class NativeRustProtocolApi : RustProtocolApi, Closeable {
         1 -> "invalid_handle"
         2 -> "integrity"
         3 -> "stale_session"
+        5 -> "session_active"
         else -> "protocol_error"
     }
 
@@ -83,6 +86,7 @@ class NativeRustProtocolApi : RustProtocolApi, Closeable {
         @JvmStatic private external fun nativeDestroy(handle: Long): Boolean
         @JvmStatic private external fun nativeReset(handle: Long): Boolean
         @JvmStatic private external fun nativeStartSession(handle: Long, sessionId: Long): Boolean
+        @JvmStatic private external fun nativeStopSession(handle: Long): Boolean
         @JvmStatic private external fun nativeAcceptFrame(handle: Long, frame: ByteArray): ByteArray
     }
 }
