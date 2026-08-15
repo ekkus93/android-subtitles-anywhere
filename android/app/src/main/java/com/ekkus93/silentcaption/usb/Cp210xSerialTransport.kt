@@ -12,7 +12,10 @@ class Cp210xSerialTransport private constructor(
 ) : UsbByteTransport {
     override fun read(destination: ByteArray, timeoutMs: Int): Int = port.read(destination, timeoutMs)
 
-    override fun write(source: ByteArray, timeoutMs: Int): Int = port.write(source, timeoutMs)
+    override fun write(source: ByteArray, timeoutMs: Int): Int {
+        port.write(source, timeoutMs)
+        return source.size
+    }
 
     override fun close() {
         runCatching { port.close() }
