@@ -1,0 +1,57 @@
+{
+  "protocol": "silent-caption-v1",
+  "byte_order": "little-endian",
+  "crc": "CRC-32/ISO-HDLC",
+  "vectors": [
+    {
+      "name": "hello",
+      "message_type": 1,
+      "sequence": 0,
+      "session_id": "0x0000000000000000",
+      "timestamp_ms": 0,
+      "wire_hex": "5343415001000100140000000000000000000000000000000000000093108dea88776655443322111f0000000010001001010001"
+    },
+    {
+      "name": "heartbeat",
+      "message_type": 5,
+      "sequence": 1,
+      "session_id": "0x0000000000000000",
+      "timestamp_ms": 1234,
+      "wire_hex": "534341500100050000000000010000000000000000000000d204000013c7d4ca"
+    },
+    {
+      "name": "start_session",
+      "message_type": 2,
+      "flags": 1,
+      "sequence": 2,
+      "session_id": "0x0102030405060708",
+      "timestamp_ms": 2000,
+      "wire_hex": "534341500100020108000000020000000807060504030201d0070000cf2b86560807060504030201"
+    },
+    {
+      "name": "audio_format_pcm_s16le_stereo_44100",
+      "message_type": 16,
+      "sequence": 3,
+      "session_id": "0x0102030405060708",
+      "timestamp_ms": 2010,
+      "wire_hex": "53434150010010000c000000030000000807060504030201da07000050c9d9d40101020044ac000000000000"
+    }
+  ],
+  "negative_vectors": [
+    {
+      "name": "oversized_length_header",
+      "expected": "reject_before_payload_allocation",
+      "wire_hex": "5343415001001100011000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "reserved_flag",
+      "expected": "reject_reserved_flags",
+      "wire_hex": "5343415001000540000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "bad_crc_heartbeat",
+      "expected": "reject_integrity_failure",
+      "wire_hex": "534341500100050000000000010000000000000000000000d204000000000000"
+    }
+  ]
+}
