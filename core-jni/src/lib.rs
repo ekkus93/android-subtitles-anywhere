@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
+use jni::JNIEnv;
+use jni::objects::{JByteArray, JClass};
+use jni::sys::{jboolean, jbyteArray, jlong};
 use silent_caption_core::mobile::{MobileEvent, MobileProtocolBoundary};
 use silent_caption_core::protocol::ProtocolError;
 
@@ -60,7 +63,7 @@ pub enum FfiError {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FfiEvent {
-    pub kind: &'static str,
+    pub kind: u8,
     pub session_id: u64,
     pub timestamp_ms: u32,
     pub numeric_value: u64,
@@ -71,42 +74,32 @@ impl From<MobileEvent> for FfiEvent {
     fn from(event: MobileEvent) -> Self {
         match event {
             MobileEvent::Hello { boot_id, rebooted } => Self {
-                kind: "hello",
+                kind: 1,
                 session_id: 0,
                 timestamp_ms: 0,
                 numeric_value: boot_id,
                 payload: vec![u8::from(rebooted)],
             },
-            MobileEvent::AudioFormat { session_id, payload } => {
-                Self::payload("audio_format", session_id, 0, payload)
+            MobileEvent::AudioFormat { session_id, payload } => Self::payload(2, session_id, 0, payload),
+            MobileEvent::AudioData { session_id, timestamp_ms, payload } => {
+                Self::payload(3, session_id, timestamp_ms, payload)
             }
-            MobileEvent::AudioData {
-                session_id,
-                timestamp_ms,
-                payload,
-            } => Self::payload("audio_data", session_id, timestamp_ms, payload),
-            MobileEvent::Status { session_id, payload } => {
-                Self::payload("status", session_id, 0, payload)
-            }
-            MobileEvent::Diagnostics { session_id, payload } => {
-                Self::payload("diagnostics", session_id, 0, payload)
-            }
-            MobileEvent::Error { session_id, payload } => {
-                Self::payload("error", session_id, 0, payload)
-            }
-            MobileEvent::SequenceGap { missing } => Self::numeric("sequence_gap", missing.into()),
-            MobileEvent::SequenceDuplicate => Self::numeric("sequence_duplicate", 0),
-            MobileEvent::SequenceReset => Self::numeric("sequence_reset", 0),
+            MobileEvent::Status { session_id, payload } => Self::payload(4, session_id, 0, payload),
+            MobileEvent::Diagnostics { session_id, payload } => Self::payload(5, session_id, 0, payload),
+            MobileEvent::Error { session_id, payload } => Self::payload(6, session_id, 0, payload),
+            MobileEvent::SequenceGap { missing } => Self::numeric(7, missing.into()),
+            MobileEvent::SequenceDuplicate => Self::numeric(8, 0),
+            MobileEvent::SequenceReset => Self::numeric(9, 0),
         }
     }
 }
 
 impl FfiEvent {
-    fn payload(kind: &'static str, session_id: u64, timestamp_ms: u32, payload: Vec<u8>) -> Self {
+    fn payload(kind: u8, session_id: u64, timestamp_ms: u32, payload: Vec<u8>) -> Self {
         Self { kind, session_id, timestamp_ms, numeric_value: 0, payload }
     }
 
-    fn numeric(kind: &'static str, numeric_value: u64) -> Self {
+    fn numeric(kind: u8, numeric_value: u64) -> Self {
         Self { kind, session_id: 0, timestamp_ms: 0, numeric_value, payload: Vec::new() }
     }
 }
@@ -129,4 +122,91 @@ pub fn start_session(handle: u64, session_id: u64) -> Result<(), FfiError> {
 
 pub fn accept_frame(handle: u64, frame: &[u8]) -> Result<Vec<FfiEvent>, FfiError> {
     BOUNDARIES.lock().expect("boundary store poisoned").accept_frame(handle, frame)
+}
+
+fn encode_result(result: Result<Vec<FfiEvent>, FfiError>) -> Vec<u8> {
+    match result {
+        Ok(events) => {
+            let mut output = vec![0, u8::try_from(events.len()).unwrap_or(u8::MAX)];
+            for event in events.into_iter().take(usize::from(u8::MAX)) {
+                output.push(event.kind);
+                output.extend_from_slice(&event.session_id.to_le_bytes());
+                output.extend_from_slice(&event.timestamp_ms.to_le_bytes());
+                output.extend_from_slice(&event.numeric_value.to_le_bytes());
+                let length = u32::try_from(event.payload.len()).unwrap_or(u32::MAX);
+                output.extend_from_slice(&length.to_le_bytes());
+                output.extend_from_slice(&event.payload);
+            }
+            output
+        }
+        Err(error) => {
+            let code = match error {
+                FfiError::InvalidHandle => 1,
+                FfiError::Protocol(ProtocolError::Integrity) => 2,
+                FfiError::Protocol(ProtocolError::StaleSession) => 3,
+                FfiError::Protocol(_) => 4,
+            };
+            vec![code, 0]
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeCreate(
+    _env: JNIEnv,
+    _class: JClass,
+) -> jlong {
+    jlong::try_from(create_boundary()).unwrap_or(0)
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeDestroy(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) -> jboolean {
+    u8::from(handle > 0 && destroy_boundary(handle as u64))
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeReset(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) -> jboolean {
+    u8::from(handle > 0 && reset_boundary(handle as u64))
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeStartSession(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+    session_id: jlong,
+) -> jboolean {
+    u8::from(
+        handle > 0
+            && session_id > 0
+            && start_session(handle as u64, session_id as u64).is_ok(),
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_ekkus93_silentcaption_usb_NativeRustProtocolApi_nativeAcceptFrame(
+    env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+    frame: JByteArray,
+) -> jbyteArray {
+    let result = if handle <= 0 {
+        Err(FfiError::InvalidHandle)
+    } else {
+        env.convert_byte_array(&frame)
+            .map_err(|_| FfiError::InvalidHandle)
+            .and_then(|bytes| accept_frame(handle as u64, &bytes))
+    };
+    match env.byte_array_from_slice(&encode_result(result)) {
+        Ok(array) => array.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
 }
