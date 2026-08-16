@@ -23,7 +23,11 @@ internal class ModelFileOperations(
             else -> null
         }
 
-    fun promote(temporary: File, target: File): ModelInstallFailure? = if (temporary.renameTo(target)) null else ModelInstallFailure.DownloadFailed
+    fun promote(temporary: File, target: File): ModelInstallFailure? = if (temporary.renameTo(target)) {
+        null
+    } else {
+        ModelInstallFailure.DownloadFailed
+    }
 
     private fun safe(value: String) = value.replace(Regex("[^A-Za-z0-9._-]"), "_")
 
