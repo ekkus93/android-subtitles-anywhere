@@ -3,7 +3,9 @@ package com.ekkus93.silentcaption.overlay
 import android.content.Context
 import android.content.res.Configuration
 
-class OverlayPreferences(context: Context) {
+class OverlayPreferences(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     fun load(configuration: Configuration): OverlayGeometry {
@@ -21,7 +23,8 @@ class OverlayPreferences(context: Context) {
         geometry: OverlayGeometry,
     ) {
         val prefix = orientationPrefix(configuration)
-        preferences.edit()
+        preferences
+            .edit()
             .putInt("${prefix}_x", geometry.x)
             .putInt("${prefix}_y", geometry.y)
             .putInt("${prefix}_width", geometry.width)
