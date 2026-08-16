@@ -13,15 +13,15 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 
-class AndroidSetupProbe(private val context: Context) {
+class AndroidSetupProbe(
+    private val context: Context,
+) {
     private val usbManager = context.getSystemService(UsbManager::class.java)
     private val audioManager = context.getSystemService(AudioManager::class.java)
 
     fun attachedUsbDevice(): UsbDevice? = usbManager.deviceList.values.firstOrNull()
 
-    fun hasUsbPermission(
-        device: UsbDevice?,
-    ): Boolean = device != null && usbManager.hasPermission(device)
+    fun hasUsbPermission(device: UsbDevice?): Boolean = device != null && usbManager.hasPermission(device)
 
     fun requestUsbPermission(device: UsbDevice) {
         val intent = Intent(ACTION_USB_PERMISSION).setPackage(context.packageName)
