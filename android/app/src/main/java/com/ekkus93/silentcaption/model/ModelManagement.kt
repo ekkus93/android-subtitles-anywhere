@@ -74,31 +74,8 @@ class ModelManager(
         onProgress: (Long, Long) -> Unit = { _, _ -> },
     ): ModelInstallResult {
         root.mkdirs()
-        if (freeSpace.availableBytes(root) < requiredSpace(entry.sizeBytes)) {
-            return ModelInstallResult.Failed(ModelInstallFailure.InsufficientSpace)
-        }
-
-        val target = modelFile(entry)
-        val temporary = File(root, ".${target.name}.part")
-        temporary.delete()
-        val downloaded = download(entry, temporary, cancellation, onProgress)
-        if (downloaded != null) {
-            temporary.delete()
-            return ModelInstallResult.Failed(downloaded)
-        }
-        if (temporary.length() != entry.sizeBytes) {
-            temporary.delete()
-            return ModelInstallResult.Failed(ModelInstallFailure.SizeMismatch)
-        }
-        if (!sha256(temporary).equals(entry.sha256, ignoreCase = true)) {
-            temporary.delete()
-            return ModelInstallResult.Failed(ModelInstallFailure.HashMismatch)
-        }
-        if (!temporary.renameTo(target)) {
-            temporary.delete()
-            return ModelInstallResult.Failed(ModelInstallFailure.DownloadFailed)
-        }
-        return ModelInstallResult.Installed(InstalledModel(entry, target))
+        val failure = preflight(entry) ?: downloadAndValidate(entry, cancellation, onProgress)
+        return failure ?: ModelInstallResult.Installed(InstalledModel(entry, modelFile(entry)))
     }
 
     fun installed(entry: ModelManifestEntry): InstalledModel? {
@@ -115,6 +92,42 @@ class ModelManager(
         return !file.exists() || file.delete()
     }
 
+    private fun preflight(entry: ModelManifestEntry): ModelInstallResult.Failed? =
+        if (freeSpace.availableBytes(root) < requiredSpace(entry.sizeBytes)) {
+            ModelInstallResult.Failed(ModelInstallFailure.InsufficientSpace)
+        } else {
+            null
+        }
+
+    private fun downloadAndValidate(
+        entry: ModelManifestEntry,
+        cancellation: CancellationProbe,
+        onProgress: (Long, Long) -> Unit,
+    ): ModelInstallResult.Failed? {
+        val target = modelFile(entry)
+        val temporary = File(root, ".${target.name}.part")
+        temporary.delete()
+        val failure =
+            download(entry, temporary, cancellation, onProgress)
+                ?: validateDownload(entry, temporary)
+                ?: promoteDownload(temporary, target)
+        if (failure != null) temporary.delete()
+        return failure?.let(ModelInstallResult::Failed)
+    }
+
+    private fun validateDownload(
+        entry: ModelManifestEntry,
+        temporary: File,
+    ): ModelInstallFailure? =
+        when {
+            temporary.length() != entry.sizeBytes -> ModelInstallFailure.SizeMismatch
+            !sha256(temporary).equals(entry.sha256, ignoreCase = true) -> ModelInstallFailure.HashMismatch
+            else -> null
+        }
+
+    private fun promoteDownload(temporary: File, target: File): ModelInstallFailure? =
+        if (temporary.renameTo(target)) null else ModelInstallFailure.DownloadFailed
+
     private fun download(
         entry: ModelManifestEntry,
         temporary: File,
@@ -124,23 +137,35 @@ class ModelManager(
         try {
             source.open(entry.url).use { input ->
                 temporary.outputStream().buffered().use { output ->
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    var written = 0L
-                    while (true) {
-                        if (cancellation.isCancelled()) return ModelInstallFailure.Cancelled
-                        val count = input.read(buffer)
-                        if (count < 0) break
-                        output.write(buffer, 0, count)
-                        written += count
-                        onProgress(written, entry.sizeBytes)
-                        if (written > entry.sizeBytes) return ModelInstallFailure.SizeMismatch
-                    }
+                    copyDownload(input, output, entry.sizeBytes, cancellation, onProgress)
                 }
             }
-            null
         } catch (_: Exception) {
             ModelInstallFailure.DownloadFailed
         }
+
+    private fun copyDownload(
+        input: InputStream,
+        output: java.io.OutputStream,
+        expectedSize: Long,
+        cancellation: CancellationProbe,
+        onProgress: (Long, Long) -> Unit,
+    ): ModelInstallFailure? {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var written = 0L
+        while (written <= expectedSize && !cancellation.isCancelled()) {
+            val count = input.read(buffer)
+            if (count < 0) return null
+            output.write(buffer, 0, count)
+            written += count
+            onProgress(written, expectedSize)
+        }
+        return if (cancellation.isCancelled()) {
+            ModelInstallFailure.Cancelled
+        } else {
+            ModelInstallFailure.SizeMismatch
+        }
+    }
 
     private fun modelFile(entry: ModelManifestEntry) =
         File(root, "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model")
