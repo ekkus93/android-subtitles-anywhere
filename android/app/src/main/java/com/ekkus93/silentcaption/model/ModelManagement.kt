@@ -37,9 +37,13 @@ data class InstalledModel(
 )
 
 sealed interface ModelInstallResult {
-    data class Installed(val model: InstalledModel) : ModelInstallResult
+    data class Installed(
+        val model: InstalledModel,
+    ) : ModelInstallResult
 
-    data class Failed(val reason: ModelInstallFailure) : ModelInstallResult
+    data class Failed(
+        val reason: ModelInstallFailure,
+    ) : ModelInstallResult
 }
 
 enum class ModelInstallFailure {
@@ -84,7 +88,10 @@ class ModelManager(
         return file.takeIf { files.isValid(entry, it) }?.let { InstalledModel(entry, it) }
     }
 
-    fun delete(entry: ModelManifestEntry, activeModelId: String?): Boolean {
+    fun delete(
+        entry: ModelManifestEntry,
+        activeModelId: String?,
+    ): Boolean {
         if (entry.modelId == activeModelId) return false
         val file = files.modelFile(entry)
         return !file.exists() || file.delete()
@@ -152,6 +159,5 @@ class ModelManager(
         }
     }
 
-    private fun requiredSpace(size: Long): Long =
-        if (size > Long.MAX_VALUE / 2) Long.MAX_VALUE else size * 2
+    private fun requiredSpace(size: Long): Long = if (size > Long.MAX_VALUE / 2) Long.MAX_VALUE else size * 2
 }
