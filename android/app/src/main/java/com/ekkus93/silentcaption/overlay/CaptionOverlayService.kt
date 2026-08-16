@@ -2,16 +2,12 @@ package com.ekkus93.silentcaption.overlay
 
 import android.app.Service
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
-import kotlin.math.roundToInt
 
 class CaptionOverlayService : Service() {
     private lateinit var windowManager: WindowManager
@@ -37,13 +33,9 @@ class CaptionOverlayService : Service() {
         when (intent?.action) {
             ACTION_STOP -> stopSelf()
             ACTION_PARTIAL ->
-                updateText(
-                    captionText.replacePartial(intent.getStringExtra(EXTRA_TEXT).orEmpty()),
-                )
+                updateText(captionText.replacePartial(intent.getStringExtra(EXTRA_TEXT).orEmpty()))
             ACTION_FINAL ->
-                updateText(
-                    captionText.commit(intent.getStringExtra(EXTRA_TEXT).orEmpty()),
-                )
+                updateText(captionText.commit(intent.getStringExtra(EXTRA_TEXT).orEmpty()))
             else -> showOverlay(intent)
         }
         return START_NOT_STICKY
@@ -74,37 +66,27 @@ class CaptionOverlayService : Service() {
         }
         val geometry = recoveredGeometry()
         val params = overlayLayoutParams(geometry)
-        val view = createCaptionView()
+        val dragListener = OverlayDragListener(windowManager, { layoutParams }, ::persistRecoveredGeometry)
+        val view = CaptionOverlayViewFactory.create(this, captionText.visible, dragListener)
         layoutParams = params
         captionView = view
         windowManager.addView(view, params)
         applyMode()
     }
 
-    private fun createCaptionView(): TextView =
-        TextView(this).apply {
-            text = captionText.visible.ifBlank { "Captions will appear here" }
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.argb(224, 24, 28, 32))
-            textSize = 22f
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(24, 16, 24, 16)
-            contentDescription = "Live captions"
-            textDirection = View.TEXT_DIRECTION_LOCALE
-            setOnTouchListener(OverlayDragListener())
-        }
-
     private fun applyMode() {
         val view = captionView ?: return
-        view.maxLines = if (mode == OverlayMode.Compact) 2 else Int.MAX_VALUE
-        view.textSize = if (mode == OverlayMode.Compact) 18f else 22f
+        view.maxLines =
+            if (mode == OverlayMode.Compact) CaptionOverlayViewFactory.COMPACT_MAX_LINES else Int.MAX_VALUE
+        view.textSize =
+            if (mode == OverlayMode.Compact) {
+                CaptionOverlayViewFactory.COMPACT_TEXT_SIZE
+            } else {
+                CaptionOverlayViewFactory.FLOATING_TEXT_SIZE
+            }
         val params = layoutParams ?: return
         params.height =
-            if (mode == OverlayMode.Compact) {
-                WindowManager.LayoutParams.WRAP_CONTENT
-            } else {
-                params.height
-            }
+            if (mode == OverlayMode.Compact) WindowManager.LayoutParams.WRAP_CONTENT else params.height
         windowManager.updateViewLayout(view, params)
     }
 
@@ -134,36 +116,6 @@ class CaptionOverlayService : Service() {
             x = geometry.x
             y = geometry.y
         }
-
-    private inner class OverlayDragListener : View.OnTouchListener {
-        private var startX = 0
-        private var startY = 0
-        private var touchX = 0f
-        private var touchY = 0f
-
-        override fun onTouch(
-            view: View,
-            event: MotionEvent,
-        ): Boolean {
-            val params = layoutParams ?: return false
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = params.x
-                    startY = params.y
-                    touchX = event.rawX
-                    touchY = event.rawY
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    params.x = startX + (event.rawX - touchX).roundToInt()
-                    params.y = startY + (event.rawY - touchY).roundToInt()
-                    windowManager.updateViewLayout(view, params)
-                }
-                MotionEvent.ACTION_UP -> persistRecoveredGeometry(params)
-                else -> return false
-            }
-            return true
-        }
-    }
 
     private fun persistRecoveredGeometry(params: WindowManager.LayoutParams) {
         val bounds = windowManager.currentWindowMetrics.bounds
