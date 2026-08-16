@@ -9,10 +9,10 @@ class OverlayPreferences(context: Context) {
     fun load(configuration: Configuration): OverlayGeometry {
         val prefix = orientationPrefix(configuration)
         return OverlayGeometry(
-            x = preferences.getInt("${prefix}_x", 24),
-            y = preferences.getInt("${prefix}_y", 120),
-            width = preferences.getInt("${prefix}_width", 720),
-            height = preferences.getInt("${prefix}_height", 240),
+            x = preferences.getInt("${prefix}_x", DEFAULT_X),
+            y = preferences.getInt("${prefix}_y", DEFAULT_Y),
+            width = preferences.getInt("${prefix}_width", DEFAULT_WIDTH),
+            height = preferences.getInt("${prefix}_height", DEFAULT_HEIGHT),
         )
     }
 
@@ -38,5 +38,9 @@ class OverlayPreferences(context: Context) {
 
     private companion object {
         const val PREFERENCES = "caption_overlay_geometry"
+        const val DEFAULT_X = 24
+        const val DEFAULT_Y = 120
+        const val DEFAULT_WIDTH = 720
+        const val DEFAULT_HEIGHT = 240
     }
 }
