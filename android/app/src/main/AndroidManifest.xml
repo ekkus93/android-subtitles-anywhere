@@ -20,6 +20,9 @@
             </intent-filter>
         </activity>
         <service
+            android:name=".overlay.CaptionOverlayService"
+            android:exported="false" />
+        <service
             android:name=".session.CaptionSessionService"
             android:exported="false"
             android:foregroundServiceType="microphone" />

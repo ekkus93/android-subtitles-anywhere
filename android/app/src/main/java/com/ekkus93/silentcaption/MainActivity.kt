@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ekkus93.silentcaption.model.AndroidModelReadiness
+import com.ekkus93.silentcaption.overlay.CaptionOverlayController
 import com.ekkus93.silentcaption.session.CaptionSessionPhase
 import com.ekkus93.silentcaption.session.CaptionSessionState
 import com.ekkus93.silentcaption.setup.AndroidSetupProbe
@@ -99,6 +101,11 @@ private fun silentCaptionApp() {
         )
     sessionState = readinessState(sessionState, checklist.ready)
     refresh.hashCode()
+    LaunchedEffect(displayMode, checklist.ready) {
+        if (displayMode == CaptionDisplayMode.Reader || checklist.ready) {
+            CaptionOverlayController.applyDisplayMode(context, displayMode)
+        }
+    }
     val setupActions =
         setupUiActions(
             usbPermission = { usbDevice?.let(probe::requestUsbPermission) },
@@ -165,7 +172,8 @@ private fun appContent(
             checklist = state.checklist,
             showUsbPermission = usbDevice != null && !probe.hasUsbPermission(usbDevice),
             showNotificationPermission = probe.notificationsRequired() && !probe.notificationsGranted(),
-            showOverlayPermission = state.displayMode != CaptionDisplayMode.Reader && !probe.overlayGranted(),
+            showOverlayPermission =
+                state.displayMode != CaptionDisplayMode.Reader && !probe.overlayGranted(),
             actions = setupActions,
         )
     }
