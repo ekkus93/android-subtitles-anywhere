@@ -39,11 +39,12 @@ data class HomeUiState(
     val errorDetail: String? = null,
 ) {
     val blockers: List<String>
-        get() = buildList {
-            if (!dongle.usbReady) add("USB dongle is not ready")
-            if (!dongle.bluetoothRouteReady) add("Bluetooth media route is not ready")
-            if (!modelReady) add("Speech model is not installed and verified")
-        }
+        get() =
+            buildList {
+                if (!dongle.usbReady) add("USB dongle is not ready")
+                if (!dongle.bluetoothRouteReady) add("Bluetooth media route is not ready")
+                if (!modelReady) add("Speech model is not installed and verified")
+            }
 
     val canStart: Boolean
         get() = blockers.isEmpty() && sessionPhase == CaptionSessionPhase.Ready
