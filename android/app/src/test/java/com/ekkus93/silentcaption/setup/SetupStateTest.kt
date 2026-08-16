@@ -30,14 +30,16 @@ class SetupStateTest {
     @Test
     fun notification_denial_blocks_only_when_runtime_permission_is_applicable() {
         assertFalse(
-            SetupEvaluator.evaluate(
-                readyInputs.copy(notificationsRequired = true, notificationsGranted = false),
-            ).ready,
+            SetupEvaluator
+                .evaluate(
+                    readyInputs.copy(notificationsRequired = true, notificationsGranted = false),
+                ).ready,
         )
         assertTrue(
-            SetupEvaluator.evaluate(
-                readyInputs.copy(notificationsRequired = false, notificationsGranted = false),
-            ).ready,
+            SetupEvaluator
+                .evaluate(
+                    readyInputs.copy(notificationsRequired = false, notificationsGranted = false),
+                ).ready,
         )
     }
 
