@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.ekkus93.silentcaption.model.AndroidModelReadiness
 import com.ekkus93.silentcaption.session.CaptionSessionPhase
 import com.ekkus93.silentcaption.session.CaptionSessionState
 import com.ekkus93.silentcaption.setup.AndroidSetupProbe
@@ -65,6 +66,7 @@ private data class SetupUiActions(
 private fun silentCaptionApp() {
     val context = LocalContext.current
     val probe = remember { AndroidSetupProbe(context) }
+    val modelReadiness = remember { AndroidModelReadiness(context) }
     var refresh by remember { mutableStateOf(0) }
     var displayMode by remember { mutableStateOf(CaptionDisplayMode.Reader) }
     var sessionState by remember { mutableStateOf(CaptionSessionState()) }
@@ -74,7 +76,7 @@ private fun silentCaptionApp() {
         }
     val usbDevice = probe.attachedUsbDevice()
     val floatingMode = displayMode != CaptionDisplayMode.Reader
-    val modelReady = false
+    val modelReady = modelReadiness.whisperTinyInstalled()
     val checklist =
         SetupEvaluator.evaluate(
             SetupInputs(
