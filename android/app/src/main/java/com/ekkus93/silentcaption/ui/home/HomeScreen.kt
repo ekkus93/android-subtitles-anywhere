@@ -13,10 +13,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ekkus93.silentcaption.session.CaptionSessionPhase
-import com.ekkus93.silentcaption.ui.theme.SilentCaptionTheme
 
 enum class CaptionDisplayMode {
     Floating,
@@ -152,55 +150,3 @@ private fun primaryAction(
 }
 
 private fun readyLabel(ready: Boolean) = if (ready) "Ready" else "Not ready"
-
-private val previewActions = HomeUiActions({}, {}, {})
-
-@Preview(showBackground = true)
-@Composable
-private fun readyPreview() {
-    SilentCaptionTheme {
-        homeScreen(
-            HomeUiState(
-                dongle = DongleStatus(true, true, "0.1.0", "v1"),
-                modelReady = true,
-                backendLabel = "Whisper Tiny multilingual",
-                languageLabel = "Auto",
-                sessionPhase = CaptionSessionPhase.Ready,
-            ),
-            previewActions,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun blockedPreview() {
-    SilentCaptionTheme {
-        homeScreen(
-            HomeUiState(
-                dongle = DongleStatus(false, false),
-                modelReady = false,
-                backendLabel = "Whisper Tiny multilingual",
-                languageLabel = "Auto",
-            ),
-            previewActions,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun listeningPreview() {
-    SilentCaptionTheme {
-        homeScreen(
-            HomeUiState(
-                dongle = DongleStatus(true, true, "0.1.0", "v1"),
-                modelReady = true,
-                backendLabel = "Zipformer",
-                languageLabel = "English",
-                sessionPhase = CaptionSessionPhase.Listening,
-            ),
-            previewActions,
-        )
-    }
-}
