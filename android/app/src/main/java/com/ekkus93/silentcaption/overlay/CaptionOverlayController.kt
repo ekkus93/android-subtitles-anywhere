@@ -12,8 +12,7 @@ object CaptionOverlayController {
     ) {
         val intent = Intent(context, CaptionOverlayService::class.java)
         if (mode == CaptionDisplayMode.Reader) {
-            intent.action = CaptionOverlayService.ACTION_STOP
-            context.startService(intent)
+            context.stopService(intent)
             return
         }
         intent.action = CaptionOverlayService.ACTION_SHOW
