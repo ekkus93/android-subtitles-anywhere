@@ -3,7 +3,6 @@ package com.ekkus93.silentcaption.model
 import java.io.File
 import java.io.InputStream
 import java.net.URI
-import java.security.MessageDigest
 
 data class ModelManifestEntry(
     val backendId: String,
@@ -68,6 +67,8 @@ class ModelManager(
     private val source: ModelDownloadSource,
     private val freeSpace: FreeSpaceProbe = FreeSpaceProbe { it.usableSpace },
 ) {
+    private val files = ModelFileOperations(root)
+
     fun install(
         entry: ModelManifestEntry,
         cancellation: CancellationProbe = CancellationProbe { false },
@@ -75,20 +76,17 @@ class ModelManager(
     ): ModelInstallResult {
         root.mkdirs()
         val failure = preflight(entry) ?: downloadAndValidate(entry, cancellation, onProgress)
-        return failure ?: ModelInstallResult.Installed(InstalledModel(entry, modelFile(entry)))
+        return failure ?: ModelInstallResult.Installed(InstalledModel(entry, files.modelFile(entry)))
     }
 
     fun installed(entry: ModelManifestEntry): InstalledModel? {
-        val file = modelFile(entry)
-        return file
-            .takeIf { it.isFile && it.length() == entry.sizeBytes }
-            ?.takeIf { sha256(it).equals(entry.sha256, ignoreCase = true) }
-            ?.let { InstalledModel(entry, it) }
+        val file = files.modelFile(entry)
+        return file.takeIf { files.isValid(entry, it) }?.let { InstalledModel(entry, it) }
     }
 
     fun delete(entry: ModelManifestEntry, activeModelId: String?): Boolean {
         if (entry.modelId == activeModelId) return false
-        val file = modelFile(entry)
+        val file = files.modelFile(entry)
         return !file.exists() || file.delete()
     }
 
@@ -104,29 +102,16 @@ class ModelManager(
         cancellation: CancellationProbe,
         onProgress: (Long, Long) -> Unit,
     ): ModelInstallResult.Failed? {
-        val target = modelFile(entry)
-        val temporary = File(root, ".${target.name}.part")
+        val target = files.modelFile(entry)
+        val temporary = files.temporaryFile(entry)
         temporary.delete()
         val failure =
             download(entry, temporary, cancellation, onProgress)
-                ?: validateDownload(entry, temporary)
-                ?: promoteDownload(temporary, target)
+                ?: files.validate(entry, temporary)
+                ?: files.promote(temporary, target)
         if (failure != null) temporary.delete()
         return failure?.let(ModelInstallResult::Failed)
     }
-
-    private fun validateDownload(
-        entry: ModelManifestEntry,
-        temporary: File,
-    ): ModelInstallFailure? =
-        when {
-            temporary.length() != entry.sizeBytes -> ModelInstallFailure.SizeMismatch
-            !sha256(temporary).equals(entry.sha256, ignoreCase = true) -> ModelInstallFailure.HashMismatch
-            else -> null
-        }
-
-    private fun promoteDownload(temporary: File, target: File): ModelInstallFailure? =
-        if (temporary.renameTo(target)) null else ModelInstallFailure.DownloadFailed
 
     private fun download(
         entry: ModelManifestEntry,
@@ -167,24 +152,6 @@ class ModelManager(
         }
     }
 
-    private fun modelFile(entry: ModelManifestEntry) =
-        File(root, "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model")
-
-    private fun safe(value: String) = value.replace(Regex("[^A-Za-z0-9._-]"), "_")
-
     private fun requiredSpace(size: Long): Long =
         if (size > Long.MAX_VALUE / 2) Long.MAX_VALUE else size * 2
-
-    private fun sha256(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        file.inputStream().buffered().use { input ->
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                digest.update(buffer, 0, count)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
 }
