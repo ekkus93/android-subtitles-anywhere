@@ -62,6 +62,13 @@ private data class SetupUiActions(
     val onRefresh: () -> Unit,
 )
 
+private data class AppUiState(
+    val checklist: SetupChecklist,
+    val modelReady: Boolean,
+    val displayMode: CaptionDisplayMode,
+    val sessionState: CaptionSessionState,
+)
+
 @Composable
 private fun silentCaptionApp() {
     val context = LocalContext.current
@@ -92,52 +99,75 @@ private fun silentCaptionApp() {
         )
     sessionState = readinessState(sessionState, checklist.ready)
     refresh.hashCode()
-
     val setupActions =
-        SetupUiActions(
-            onUsbPermission = { usbDevice?.let(probe::requestUsbPermission) },
-            onNotificationPermission = {
+        setupUiActions(
+            probe = probe,
+            usbPermission = { usbDevice?.let(probe::requestUsbPermission) },
+            notificationPermission = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             },
-            onBluetoothSettings = {
-                context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-            },
-            onOverlayPermission = {
-                val packageUri = Uri.parse("package:${context.packageName}")
-                context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri))
-            },
-            onRefresh = { refresh++ },
+            refresh = { refresh++ },
         )
+    appContent(
+        AppUiState(checklist, modelReady, displayMode, sessionState),
+        setupActions,
+        onDisplayModeChanged = { displayMode = it },
+    )
+}
 
-    if (checklist.ready) {
+@Composable
+private fun setupUiActions(
+    probe: AndroidSetupProbe,
+    usbPermission: () -> Unit,
+    notificationPermission: () -> Unit,
+    refresh: () -> Unit,
+): SetupUiActions {
+    val context = LocalContext.current
+    return SetupUiActions(
+        onUsbPermission = usbPermission,
+        onNotificationPermission = notificationPermission,
+        onBluetoothSettings = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
+        onOverlayPermission = {
+            val packageUri = Uri.parse("package:${context.packageName}")
+            context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri))
+        },
+        onRefresh = refresh,
+    )
+}
+
+@Composable
+private fun appContent(
+    state: AppUiState,
+    setupActions: SetupUiActions,
+    onDisplayModeChanged: (CaptionDisplayMode) -> Unit,
+) {
+    if (state.checklist.ready) {
         homeScreen(
             state =
                 HomeStateFactory.create(
                     facts =
                         HomeRuntimeFacts(
-                            setup = checklist,
-                            modelReady = modelReady,
+                            setup = state.checklist,
+                            modelReady = state.modelReady,
                             backendLabel = "Whisper Tiny multilingual",
                             languageLabel = "Auto",
-                            session = sessionState,
+                            session = state.sessionState,
                         ),
-                    displayMode = displayMode,
+                    displayMode = state.displayMode,
                 ),
-            actions =
-                HomeUiActions(
-                    onStart = {},
-                    onStop = {},
-                    onDisplayModeChanged = { displayMode = it },
-                ),
+            actions = HomeUiActions({}, {}, onDisplayModeChanged),
         )
     } else {
+        val context = LocalContext.current
+        val probe = remember { AndroidSetupProbe(context) }
+        val usbDevice = probe.attachedUsbDevice()
         setupScreen(
-            checklist = checklist,
+            checklist = state.checklist,
             showUsbPermission = usbDevice != null && !probe.hasUsbPermission(usbDevice),
             showNotificationPermission = probe.notificationsRequired() && !probe.notificationsGranted(),
-            showOverlayPermission = floatingMode && !probe.overlayGranted(),
+            showOverlayPermission = state.displayMode != CaptionDisplayMode.Reader && !probe.overlayGranted(),
             actions = setupActions,
         )
     }
