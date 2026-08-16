@@ -1,15 +1,15 @@
 package com.ekkus93.silentcaption.model
 
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.nio.file.Files
-import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.nio.file.Files
+import java.security.MessageDigest
 
 class ModelManagementTest {
     private val payload = "verified-model".toByteArray()
@@ -29,22 +29,24 @@ class ModelManagementTest {
         )
 
     @Test
-    fun install_verifies_hash_and_promotes_atomically() = withManager(payload) { manager, root ->
-        val result = manager.install(entry)
-        assertTrue(result is ModelInstallResult.Installed)
-        assertNotNull(manager.installed(entry))
-        assertTrue(root.listFiles().orEmpty().none { it.name.endsWith(".part") })
-    }
+    fun install_verifies_hash_and_promotes_atomically() =
+        withManager(payload) { manager, root ->
+            val result = manager.install(entry)
+            assertTrue(result is ModelInstallResult.Installed)
+            assertNotNull(manager.installed(entry))
+            assertTrue(root.listFiles().orEmpty().none { it.name.endsWith(".part") })
+        }
 
     @Test
-    fun corrupt_hash_never_activates_model() = withManager("corrupt".toByteArray()) { manager, root ->
-        assertEquals(
-            ModelInstallResult.Failed(ModelInstallFailure.SizeMismatch),
-            manager.install(entry),
-        )
-        assertNull(manager.installed(entry))
-        assertTrue(root.listFiles().orEmpty().none { it.name.endsWith(".part") })
-    }
+    fun corrupt_hash_never_activates_model() =
+        withManager("corrupt".toByteArray()) { manager, root ->
+            assertEquals(
+                ModelInstallResult.Failed(ModelInstallFailure.SizeMismatch),
+                manager.install(entry),
+            )
+            assertNull(manager.installed(entry))
+            assertTrue(root.listFiles().orEmpty().none { it.name.endsWith(".part") })
+        }
 
     @Test
     fun matching_size_corrupt_hash_is_rejected() =
@@ -76,34 +78,37 @@ class ModelManagementTest {
     }
 
     @Test
-    fun cancellation_removes_partial_file() = withManager(payload) { manager, root ->
-        assertEquals(
-            ModelInstallResult.Failed(ModelInstallFailure.Cancelled),
-            manager.install(entry, CancellationProbe { true }),
-        )
-        assertTrue(root.listFiles().orEmpty().isEmpty())
-    }
+    fun cancellation_removes_partial_file() =
+        withManager(payload) { manager, root ->
+            assertEquals(
+                ModelInstallResult.Failed(ModelInstallFailure.Cancelled),
+                manager.install(entry, CancellationProbe { true }),
+            )
+            assertTrue(root.listFiles().orEmpty().isEmpty())
+        }
 
     @Test
-    fun failed_upgrade_preserves_last_known_good_model() = withManager(payload) { manager, _ ->
-        assertTrue(manager.install(entry) is ModelInstallResult.Installed)
-        val badUpgrade = entry.copy(version = "2", sha256 = "0".repeat(64))
-        assertEquals(
-            ModelInstallResult.Failed(ModelInstallFailure.HashMismatch),
-            manager.install(badUpgrade),
-        )
-        assertNotNull(manager.installed(entry))
-        assertNull(manager.installed(badUpgrade))
-    }
+    fun failed_upgrade_preserves_last_known_good_model() =
+        withManager(payload) { manager, _ ->
+            assertTrue(manager.install(entry) is ModelInstallResult.Installed)
+            val badUpgrade = entry.copy(version = "2", sha256 = "0".repeat(64))
+            assertEquals(
+                ModelInstallResult.Failed(ModelInstallFailure.HashMismatch),
+                manager.install(badUpgrade),
+            )
+            assertNotNull(manager.installed(entry))
+            assertNull(manager.installed(badUpgrade))
+        }
 
     @Test
-    fun active_model_is_protected_from_deletion() = withManager(payload) { manager, _ ->
-        assertTrue(manager.install(entry) is ModelInstallResult.Installed)
-        assertFalse(manager.delete(entry, entry.modelId))
-        assertNotNull(manager.installed(entry))
-        assertTrue(manager.delete(entry, null))
-        assertNull(manager.installed(entry))
-    }
+    fun active_model_is_protected_from_deletion() =
+        withManager(payload) { manager, _ ->
+            assertTrue(manager.install(entry) is ModelInstallResult.Installed)
+            assertFalse(manager.delete(entry, entry.modelId))
+            assertNotNull(manager.installed(entry))
+            assertTrue(manager.delete(entry, null))
+            assertNull(manager.installed(entry))
+        }
 
     @Test(expected = IllegalArgumentException::class)
     fun manifest_rejects_non_https_urls() {
