@@ -59,16 +59,15 @@ class HomeStateFactoryTest {
         assertEquals("USB detached", state.errorDetail)
     }
 
-    private fun facts() =
-        HomeRuntimeFacts(
-            setup = checklist(SetupStatus.Ready, SetupStatus.Ready),
-            modelReady = true,
-            backendLabel = "Whisper Tiny multilingual",
-            languageLabel = "Auto",
-            session = CaptionSessionState(CaptionSessionPhase.Ready),
-            firmware = "1.2.3",
-            protocol = "v1",
-        )
+    private fun facts() = HomeRuntimeFacts(
+        setup = checklist(SetupStatus.Ready, SetupStatus.Ready),
+        modelReady = true,
+        backendLabel = "Whisper Tiny multilingual",
+        languageLabel = "Auto",
+        session = CaptionSessionState(CaptionSessionPhase.Ready),
+        firmware = "1.2.3",
+        protocol = "v1",
+    )
 
     private fun checklist(
         usb: SetupStatus,
