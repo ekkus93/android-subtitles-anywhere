@@ -21,16 +21,18 @@ class CaptionOverlayStateTest {
 
     @Test
     fun `partial caption replacement does not duplicate prior partial`() {
-        val state = CaptionOverlayText(committed = "Hello", partial = "wor")
-            .replacePartial("world")
+        val state =
+            CaptionOverlayText(committed = "Hello", partial = "wor")
+                .replacePartial("world")
 
         assertEquals("Hello world", state.visible)
     }
 
     @Test
     fun `final caption clears partial and preserves committed history`() {
-        val state = CaptionOverlayText(committed = "Hello", partial = "world")
-            .commit("world")
+        val state =
+            CaptionOverlayText(committed = "Hello", partial = "world")
+                .commit("world")
 
         assertEquals("Hello world", state.visible)
         assertTrue(state.partial.isEmpty())
