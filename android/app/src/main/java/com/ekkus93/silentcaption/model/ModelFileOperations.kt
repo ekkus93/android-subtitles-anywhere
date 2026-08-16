@@ -6,10 +6,11 @@ import java.security.MessageDigest
 internal class ModelFileOperations(
     private val root: File,
 ) {
-    fun modelFile(entry: ModelManifestEntry) = File(
-        root,
-        "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model",
-    )
+    fun modelFile(entry: ModelManifestEntry) =
+        File(
+            root,
+            "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model",
+        )
 
     fun temporaryFile(entry: ModelManifestEntry) = File(root, ".${modelFile(entry).name}.part")
 
