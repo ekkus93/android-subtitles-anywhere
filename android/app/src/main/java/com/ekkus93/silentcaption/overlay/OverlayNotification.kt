@@ -21,7 +21,8 @@ object OverlayNotification {
     }
 
     fun build(context: Context): Notification =
-        NotificationCompat.Builder(context, CHANNEL_ID)
+        NotificationCompat
+            .Builder(context, CHANNEL_ID)
             .setContentTitle("Silent Caption")
             .setContentText("Floating captions are active")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
