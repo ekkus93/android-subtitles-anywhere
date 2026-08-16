@@ -46,14 +46,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SilentCaptionTheme {
-                SilentCaptionApp()
+                silentCaptionApp()
             }
         }
     }
 }
 
+private data class SetupUiState(
+    val checklist: SetupChecklist,
+    val floatingMode: Boolean,
+    val showUsbPermission: Boolean,
+    val showNotificationPermission: Boolean,
+    val showOverlayPermission: Boolean,
+)
+
+private data class SetupUiActions(
+    val onFloatingModeChanged: (Boolean) -> Unit,
+    val onUsbPermission: () -> Unit,
+    val onNotificationPermission: () -> Unit,
+    val onBluetoothSettings: () -> Unit,
+    val onOverlayPermission: () -> Unit,
+    val onRefresh: () -> Unit,
+)
+
 @Composable
-fun SilentCaptionApp() {
+private fun silentCaptionApp() {
     val context = LocalContext.current
     val probe = remember { AndroidSetupProbe(context) }
     var refresh by remember { mutableStateOf(0) }
@@ -78,43 +95,43 @@ fun SilentCaptionApp() {
         )
     refresh.hashCode()
 
-    SetupScreen(
-        checklist = checklist,
-        floatingMode = floatingMode,
-        onFloatingModeChanged = { floatingMode = it },
-        showUsbPermission = usbDevice != null && !probe.hasUsbPermission(usbDevice),
-        onUsbPermission = { usbDevice?.let(probe::requestUsbPermission) },
-        showNotificationPermission = probe.notificationsRequired() && !probe.notificationsGranted(),
-        onNotificationPermission = {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        },
-        onBluetoothSettings = {
-            context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-        },
-        showOverlayPermission = floatingMode && !probe.overlayGranted(),
-        onOverlayPermission = {
-            val packageUri = Uri.parse("package:${context.packageName}")
-            context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri))
-        },
-        onRefresh = { refresh++ },
+    setupScreen(
+        state =
+            SetupUiState(
+                checklist = checklist,
+                floatingMode = floatingMode,
+                showUsbPermission = usbDevice != null && !probe.hasUsbPermission(usbDevice),
+                showNotificationPermission =
+                    probe.notificationsRequired() && !probe.notificationsGranted(),
+                showOverlayPermission = floatingMode && !probe.overlayGranted(),
+            ),
+        actions =
+            SetupUiActions(
+                onFloatingModeChanged = { floatingMode = it },
+                onUsbPermission = { usbDevice?.let(probe::requestUsbPermission) },
+                onNotificationPermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+                onBluetoothSettings = {
+                    context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                },
+                onOverlayPermission = {
+                    val packageUri = Uri.parse("package:${context.packageName}")
+                    context.startActivity(
+                        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri),
+                    )
+                },
+                onRefresh = { refresh++ },
+            ),
     )
 }
 
 @Composable
-private fun SetupScreen(
-    checklist: SetupChecklist,
-    floatingMode: Boolean,
-    onFloatingModeChanged: (Boolean) -> Unit,
-    showUsbPermission: Boolean,
-    onUsbPermission: () -> Unit,
-    showNotificationPermission: Boolean,
-    onNotificationPermission: () -> Unit,
-    onBluetoothSettings: () -> Unit,
-    showOverlayPermission: Boolean,
-    onOverlayPermission: () -> Unit,
-    onRefresh: () -> Unit,
+private fun setupScreen(
+    state: SetupUiState,
+    actions: SetupUiActions,
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -125,21 +142,10 @@ private fun SetupScreen(
                     .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SetupIntroduction(checklist)
-            SetupActions(
-                showUsbPermission = showUsbPermission,
-                onUsbPermission = onUsbPermission,
-                showNotificationPermission = showNotificationPermission,
-                onNotificationPermission = onNotificationPermission,
-                onBluetoothSettings = onBluetoothSettings,
-            )
-            CaptionModeControls(
-                floatingMode = floatingMode,
-                onFloatingModeChanged = onFloatingModeChanged,
-                showOverlayPermission = showOverlayPermission,
-                onOverlayPermission = onOverlayPermission,
-            )
-            Button(onClick = onRefresh) { Text("Refresh setup") }
+            setupIntroduction(state.checklist)
+            setupActions(state, actions)
+            captionModeControls(state, actions)
+            Button(onClick = actions.onRefresh) { Text("Refresh setup") }
             Text(
                 "Speech-model installation remains not ready until SC-320 model management " +
                     "provides a verified installed model.",
@@ -150,7 +156,7 @@ private fun SetupScreen(
 }
 
 @Composable
-private fun SetupIntroduction(checklist: SetupChecklist) {
+private fun setupIntroduction(checklist: SetupChecklist) {
     Text(text = "Silent Caption setup", style = MaterialTheme.typography.headlineMedium)
     Text(
         "Your phone sends media audio to the Silent Caption Bluetooth dongle. " +
@@ -176,28 +182,23 @@ private fun SetupIntroduction(checklist: SetupChecklist) {
 }
 
 @Composable
-private fun SetupActions(
-    showUsbPermission: Boolean,
-    onUsbPermission: () -> Unit,
-    showNotificationPermission: Boolean,
-    onNotificationPermission: () -> Unit,
-    onBluetoothSettings: () -> Unit,
+private fun setupActions(
+    state: SetupUiState,
+    actions: SetupUiActions,
 ) {
-    if (showUsbPermission) {
-        Button(onClick = onUsbPermission) { Text("Allow USB dongle") }
+    if (state.showUsbPermission) {
+        Button(onClick = actions.onUsbPermission) { Text("Allow USB dongle") }
     }
-    if (showNotificationPermission) {
-        Button(onClick = onNotificationPermission) { Text("Allow notifications") }
+    if (state.showNotificationPermission) {
+        Button(onClick = actions.onNotificationPermission) { Text("Allow notifications") }
     }
-    Button(onClick = onBluetoothSettings) { Text("Open Bluetooth settings") }
+    Button(onClick = actions.onBluetoothSettings) { Text("Open Bluetooth settings") }
 }
 
 @Composable
-private fun CaptionModeControls(
-    floatingMode: Boolean,
-    onFloatingModeChanged: (Boolean) -> Unit,
-    showOverlayPermission: Boolean,
-    onOverlayPermission: () -> Unit,
+private fun captionModeControls(
+    state: SetupUiState,
+    actions: SetupUiActions,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -205,10 +206,15 @@ private fun CaptionModeControls(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text("Use Floating/Compact captions")
-        Switch(checked = floatingMode, onCheckedChange = onFloatingModeChanged)
+        Switch(
+            checked = state.floatingMode,
+            onCheckedChange = actions.onFloatingModeChanged,
+        )
     }
-    if (showOverlayPermission) {
-        Button(onClick = onOverlayPermission) { Text("Allow display over other apps") }
+    if (state.showOverlayPermission) {
+        Button(onClick = actions.onOverlayPermission) {
+            Text("Allow display over other apps")
+        }
     }
 }
 
