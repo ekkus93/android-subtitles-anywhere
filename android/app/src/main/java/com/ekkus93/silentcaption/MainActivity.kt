@@ -101,7 +101,6 @@ private fun silentCaptionApp() {
     refresh.hashCode()
     val setupActions =
         setupUiActions(
-            probe = probe,
             usbPermission = { usbDevice?.let(probe::requestUsbPermission) },
             notificationPermission = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -119,7 +118,6 @@ private fun silentCaptionApp() {
 
 @Composable
 private fun setupUiActions(
-    probe: AndroidSetupProbe,
     usbPermission: () -> Unit,
     notificationPermission: () -> Unit,
     refresh: () -> Unit,
