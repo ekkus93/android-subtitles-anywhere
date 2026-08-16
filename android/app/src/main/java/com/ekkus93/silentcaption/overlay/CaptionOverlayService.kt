@@ -1,12 +1,9 @@
 package com.ekkus93.silentcaption.overlay
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
@@ -14,7 +11,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
-import androidx.core.app.NotificationCompat
 import kotlin.math.roundToInt
 
 class CaptionOverlayService : Service() {
@@ -29,8 +25,8 @@ class CaptionOverlayService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         preferences = OverlayPreferences(this)
-        createNotificationChannel()
-        startForeground(NOTIFICATION_ID, overlayNotification())
+        OverlayNotification.createChannel(this)
+        startForeground(OverlayNotification.ID, OverlayNotification.build(this))
     }
 
     override fun onStartCommand(
@@ -40,8 +36,14 @@ class CaptionOverlayService : Service() {
     ): Int {
         when (intent?.action) {
             ACTION_STOP -> stopSelf()
-            ACTION_PARTIAL -> updateText(captionText.replacePartial(intent.getStringExtra(EXTRA_TEXT).orEmpty()))
-            ACTION_FINAL -> updateText(captionText.commit(intent.getStringExtra(EXTRA_TEXT).orEmpty()))
+            ACTION_PARTIAL ->
+                updateText(
+                    captionText.replacePartial(intent.getStringExtra(EXTRA_TEXT).orEmpty()),
+                )
+            ACTION_FINAL ->
+                updateText(
+                    captionText.commit(intent.getStringExtra(EXTRA_TEXT).orEmpty()),
+                )
             else -> showOverlay(intent)
         }
         return START_NOT_STICKY
@@ -60,7 +62,12 @@ class CaptionOverlayService : Service() {
             stopSelf()
             return
         }
-        mode = if (intent?.getStringExtra(EXTRA_MODE) == MODE_COMPACT) OverlayMode.Compact else OverlayMode.Floating
+        mode =
+            if (intent?.getStringExtra(EXTRA_MODE) == MODE_COMPACT) {
+                OverlayMode.Compact
+            } else {
+                OverlayMode.Floating
+            }
         if (captionView != null) {
             applyMode()
             return
@@ -92,7 +99,12 @@ class CaptionOverlayService : Service() {
         view.maxLines = if (mode == OverlayMode.Compact) 2 else Int.MAX_VALUE
         view.textSize = if (mode == OverlayMode.Compact) 18f else 22f
         val params = layoutParams ?: return
-        params.height = if (mode == OverlayMode.Compact) WindowManager.LayoutParams.WRAP_CONTENT else params.height
+        params.height =
+            if (mode == OverlayMode.Compact) {
+                WindowManager.LayoutParams.WRAP_CONTENT
+            } else {
+                params.height
+            }
         windowManager.updateViewLayout(view, params)
     }
 
@@ -114,7 +126,8 @@ class CaptionOverlayService : Service() {
             geometry.width,
             geometry.height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -156,7 +169,12 @@ class CaptionOverlayService : Service() {
         val bounds = windowManager.currentWindowMetrics.bounds
         val geometry =
             OverlayGeometryPolicy.clamp(
-                OverlayGeometry(params.x, params.y, params.width, captionView?.height ?: params.height),
+                OverlayGeometry(
+                    params.x,
+                    params.y,
+                    params.width,
+                    captionView?.height ?: params.height,
+                ),
                 OverlayBounds(bounds.width(), bounds.height()),
             )
         params.x = geometry.x
@@ -164,21 +182,6 @@ class CaptionOverlayService : Service() {
         preferences.save(resources.configuration, geometry)
         captionView?.let { windowManager.updateViewLayout(it, params) }
     }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Live captions", NotificationManager.IMPORTANCE_LOW)
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
-    }
-
-    private fun overlayNotification() =
-        NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Silent Caption")
-            .setContentText("Floating captions are active")
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .setOngoing(true)
-            .build()
 
     companion object {
         const val ACTION_SHOW = "com.ekkus93.silentcaption.overlay.SHOW"
@@ -188,7 +191,5 @@ class CaptionOverlayService : Service() {
         const val EXTRA_TEXT = "text"
         const val EXTRA_MODE = "mode"
         const val MODE_COMPACT = "compact"
-        private const val CHANNEL_ID = "caption_overlay"
-        private const val NOTIFICATION_ID = 361
     }
 }
