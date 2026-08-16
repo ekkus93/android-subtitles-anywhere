@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ekkus93.silentcaption.setup.AndroidSetupProbe
+import com.ekkus93.silentcaption.setup.SetupChecklist
 import com.ekkus93.silentcaption.setup.SetupEvaluator
 import com.ekkus93.silentcaption.setup.SetupInputs
 import com.ekkus93.silentcaption.setup.SetupStatus
@@ -77,6 +78,44 @@ fun SilentCaptionApp() {
         )
     refresh.hashCode()
 
+    SetupScreen(
+        checklist = checklist,
+        floatingMode = floatingMode,
+        onFloatingModeChanged = { floatingMode = it },
+        showUsbPermission = usbDevice != null && !probe.hasUsbPermission(usbDevice),
+        onUsbPermission = { usbDevice?.let(probe::requestUsbPermission) },
+        showNotificationPermission = probe.notificationsRequired() && !probe.notificationsGranted(),
+        onNotificationPermission = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+        onBluetoothSettings = {
+            context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+        },
+        showOverlayPermission = floatingMode && !probe.overlayGranted(),
+        onOverlayPermission = {
+            val packageUri = Uri.parse("package:${context.packageName}")
+            context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri))
+        },
+        onRefresh = { refresh++ },
+    )
+}
+
+@Composable
+private fun SetupScreen(
+    checklist: SetupChecklist,
+    floatingMode: Boolean,
+    onFloatingModeChanged: (Boolean) -> Unit,
+    showUsbPermission: Boolean,
+    onUsbPermission: () -> Unit,
+    showNotificationPermission: Boolean,
+    onNotificationPermission: () -> Unit,
+    onBluetoothSettings: () -> Unit,
+    showOverlayPermission: Boolean,
+    onOverlayPermission: () -> Unit,
+    onRefresh: () -> Unit,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier =
@@ -86,77 +125,90 @@ fun SilentCaptionApp() {
                     .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(text = "Silent Caption setup", style = MaterialTheme.typography.headlineMedium)
-            Text(
-                "Your phone sends media audio to the Silent Caption Bluetooth dongle. The dongle returns digital audio over USB for on-device speech recognition. Raw audio and captions stay local by default; Silent Caption does not require a cloud upload to operate.",
+            SetupIntroduction(checklist)
+            SetupActions(
+                showUsbPermission = showUsbPermission,
+                onUsbPermission = onUsbPermission,
+                showNotificationPermission = showNotificationPermission,
+                onNotificationPermission = onNotificationPermission,
+                onBluetoothSettings = onBluetoothSettings,
             )
-            Text(
-                "Bluetooth pairing by itself does not prove media is routed to the dongle. Ready is shown only when Android exposes the required A2DP media-output route.",
-                style = MaterialTheme.typography.bodyMedium,
+            CaptionModeControls(
+                floatingMode = floatingMode,
+                onFloatingModeChanged = onFloatingModeChanged,
+                showOverlayPermission = showOverlayPermission,
+                onOverlayPermission = onOverlayPermission,
             )
-
-            Spacer(Modifier.height(4.dp))
+            Button(onClick = onRefresh) { Text("Refresh setup") }
             Text(
-                if (checklist.ready) "Ready" else "Setup required",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            checklist.items.forEach { item ->
-                Text(
-                    text = "${statusLabel(item.status)} ${item.label}: ${item.detail}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            if (usbDevice != null && !probe.hasUsbPermission(usbDevice)) {
-                Button(onClick = { probe.requestUsbPermission(usbDevice) }) {
-                    Text("Allow USB dongle")
-                }
-            }
-            if (probe.notificationsRequired() && !probe.notificationsGranted()) {
-                Button(
-                    onClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    },
-                ) {
-                    Text("Allow notifications")
-                }
-            }
-            Button(onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }) {
-                Text("Open Bluetooth settings")
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("Use Floating/Compact captions")
-                Switch(checked = floatingMode, onCheckedChange = { floatingMode = it })
-            }
-            if (floatingMode && !probe.overlayGranted()) {
-                Button(
-                    onClick = {
-                        context.startActivity(
-                            Intent(
-                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:${context.packageName}"),
-                            ),
-                        )
-                    },
-                ) {
-                    Text("Allow display over other apps")
-                }
-            }
-            Button(onClick = { refresh++ }) {
-                Text("Refresh setup")
-            }
-            Text(
-                "Speech-model installation is intentionally reported as not ready until SC-320 model management provides a verified installed model.",
+                "Speech-model installation remains not ready until SC-320 model management " +
+                    "provides a verified installed model.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun SetupIntroduction(checklist: SetupChecklist) {
+    Text(text = "Silent Caption setup", style = MaterialTheme.typography.headlineMedium)
+    Text(
+        "Your phone sends media audio to the Silent Caption Bluetooth dongle. " +
+            "The dongle returns digital audio over USB for on-device speech recognition. " +
+            "Raw audio and captions stay local by default; no cloud upload is required.",
+    )
+    Text(
+        "Bluetooth pairing alone does not prove media is routed to the dongle. " +
+            "Ready requires Android to expose the required A2DP media-output route.",
+        style = MaterialTheme.typography.bodyMedium,
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        if (checklist.ready) "Ready" else "Setup required",
+        style = MaterialTheme.typography.titleLarge,
+    )
+    checklist.items.forEach { item ->
+        Text(
+            text = "${statusLabel(item.status)} ${item.label}: ${item.detail}",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun SetupActions(
+    showUsbPermission: Boolean,
+    onUsbPermission: () -> Unit,
+    showNotificationPermission: Boolean,
+    onNotificationPermission: () -> Unit,
+    onBluetoothSettings: () -> Unit,
+) {
+    if (showUsbPermission) {
+        Button(onClick = onUsbPermission) { Text("Allow USB dongle") }
+    }
+    if (showNotificationPermission) {
+        Button(onClick = onNotificationPermission) { Text("Allow notifications") }
+    }
+    Button(onClick = onBluetoothSettings) { Text("Open Bluetooth settings") }
+}
+
+@Composable
+private fun CaptionModeControls(
+    floatingMode: Boolean,
+    onFloatingModeChanged: (Boolean) -> Unit,
+    showOverlayPermission: Boolean,
+    onOverlayPermission: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text("Use Floating/Compact captions")
+        Switch(checked = floatingMode, onCheckedChange = onFloatingModeChanged)
+    }
+    if (showOverlayPermission) {
+        Button(onClick = onOverlayPermission) { Text("Allow display over other apps") }
     }
 }
 
