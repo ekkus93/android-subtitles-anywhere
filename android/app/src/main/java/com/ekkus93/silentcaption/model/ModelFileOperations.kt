@@ -6,28 +6,40 @@ import java.security.MessageDigest
 internal class ModelFileOperations(
     private val root: File,
 ) {
-    fun modelFile(entry: ModelManifestEntry) =
-        File(root, "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model")
+    fun modelFile(entry: ModelManifestEntry) = File(
+        root,
+        "${safe(entry.backendId)}-${safe(entry.modelId)}-${safe(entry.version)}.model",
+    )
 
     fun temporaryFile(entry: ModelManifestEntry) = File(root, ".${modelFile(entry).name}.part")
 
-    fun isValid(entry: ModelManifestEntry, file: File): Boolean =
+    fun isValid(
+        entry: ModelManifestEntry,
+        file: File,
+    ): Boolean =
         file.isFile &&
             file.length() == entry.sizeBytes &&
             sha256(file).equals(entry.sha256, ignoreCase = true)
 
-    fun validate(entry: ModelManifestEntry, file: File): ModelInstallFailure? =
+    fun validate(
+        entry: ModelManifestEntry,
+        file: File,
+    ): ModelInstallFailure? =
         when {
             file.length() != entry.sizeBytes -> ModelInstallFailure.SizeMismatch
             !sha256(file).equals(entry.sha256, ignoreCase = true) -> ModelInstallFailure.HashMismatch
             else -> null
         }
 
-    fun promote(temporary: File, target: File): ModelInstallFailure? = if (temporary.renameTo(target)) {
-        null
-    } else {
-        ModelInstallFailure.DownloadFailed
-    }
+    fun promote(
+        temporary: File,
+        target: File,
+    ): ModelInstallFailure? =
+        if (temporary.renameTo(target)) {
+            null
+        } else {
+            ModelInstallFailure.DownloadFailed
+        }
 
     private fun safe(value: String) = value.replace(Regex("[^A-Za-z0-9._-]"), "_")
 
