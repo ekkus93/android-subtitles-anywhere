@@ -104,18 +104,19 @@ class CaptionOverlayService : Service() {
     }
 
     private fun overlayLayoutParams(geometry: OverlayGeometry) =
-        WindowManager.LayoutParams(
-            geometry.width,
-            geometry.height,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = geometry.x
-            y = geometry.y
-        }
+        WindowManager
+            .LayoutParams(
+                geometry.width,
+                geometry.height,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = geometry.x
+                y = geometry.y
+            }
 
     private fun persistRecoveredGeometry(params: WindowManager.LayoutParams) {
         val bounds = windowManager.currentWindowMetrics.bounds
