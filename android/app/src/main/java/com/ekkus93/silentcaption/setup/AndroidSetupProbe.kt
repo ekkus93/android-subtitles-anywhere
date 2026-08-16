@@ -19,7 +19,9 @@ class AndroidSetupProbe(private val context: Context) {
 
     fun attachedUsbDevice(): UsbDevice? = usbManager.deviceList.values.firstOrNull()
 
-    fun hasUsbPermission(device: UsbDevice?): Boolean = device != null && usbManager.hasPermission(device)
+    fun hasUsbPermission(
+        device: UsbDevice?,
+    ): Boolean = device != null && usbManager.hasPermission(device)
 
     fun requestUsbPermission(device: UsbDevice) {
         val intent = Intent(ACTION_USB_PERMISSION).setPackage(context.packageName)
