@@ -29,6 +29,5 @@ class AndroidModelReadiness(
             source = ModelDownloadSource { error("readiness probe does not download models") },
         )
 
-    fun whisperTinyInstalled(): Boolean =
-        manager.installed(DefaultModels.whisperTinyMultilingual) != null
+    fun whisperTinyInstalled(): Boolean = manager.installed(DefaultModels.whisperTinyMultilingual) != null
 }
