@@ -3,6 +3,8 @@ package com.ekkus93.silentcaption.overlay
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.Point
+import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
@@ -96,12 +98,23 @@ class CaptionOverlayService : Service() {
     }
 
     private fun recoveredGeometry(): OverlayGeometry {
-        val bounds = windowManager.currentWindowMetrics.bounds
+        val bounds = currentOverlayBounds()
         return OverlayGeometryPolicy.clamp(
             preferences.load(resources.configuration),
-            OverlayBounds(bounds.width(), bounds.height()),
+            bounds,
         )
     }
+
+    @Suppress("DEPRECATION")
+    private fun currentOverlayBounds(): OverlayBounds =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            OverlayBounds(bounds.width(), bounds.height())
+        } else {
+            val size = Point()
+            windowManager.defaultDisplay.getRealSize(size)
+            OverlayBounds(size.x, size.y)
+        }
 
     private fun overlayLayoutParams(geometry: OverlayGeometry) =
         WindowManager
@@ -119,7 +132,7 @@ class CaptionOverlayService : Service() {
             }
 
     private fun persistRecoveredGeometry(params: WindowManager.LayoutParams) {
-        val bounds = windowManager.currentWindowMetrics.bounds
+        val bounds = currentOverlayBounds()
         val geometry =
             OverlayGeometryPolicy.clamp(
                 OverlayGeometry(
@@ -128,7 +141,7 @@ class CaptionOverlayService : Service() {
                     params.width,
                     captionView?.height ?: params.height,
                 ),
-                OverlayBounds(bounds.width(), bounds.height()),
+                bounds,
             )
         params.x = geometry.x
         params.y = geometry.y
