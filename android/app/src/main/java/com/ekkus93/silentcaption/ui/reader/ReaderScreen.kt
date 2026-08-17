@@ -20,16 +20,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 
-data class ReaderUiActions(
-    val onScrolledBackward: () -> Unit,
-    val onJumpToLive: () -> Unit,
-    val onClear: () -> Unit,
-)
-
 @Composable
 fun readerScreen(
     state: ReaderTranscriptState,
-    actions: ReaderUiActions,
+    onScrolledBackward: () -> Unit,
+    onJumpToLive: () -> Unit,
+    onClear: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     val itemCount = state.committed.size + if (state.currentCaption.isBlank()) 0 else 1
@@ -45,7 +41,7 @@ fun readerScreen(
             .drop(1)
             .collect {
                 if (state.followingLive && !listState.isAtLiveEdge(itemCount)) {
-                    actions.onScrolledBackward()
+                    onScrolledBackward()
                 }
             }
     }
@@ -55,7 +51,7 @@ fun readerScreen(
             modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            readerHeader(state, actions)
+            readerHeader(state, onJumpToLive, onClear)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -86,7 +82,8 @@ fun readerScreen(
 @Composable
 private fun readerHeader(
     state: ReaderTranscriptState,
-    actions: ReaderUiActions,
+    onJumpToLive: () -> Unit,
+    onClear: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Reader", style = MaterialTheme.typography.headlineMedium)
@@ -95,10 +92,10 @@ private fun readerHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!state.followingLive) {
-                Button(onClick = actions.onJumpToLive) { Text("Jump to Live") }
+                Button(onClick = onJumpToLive) { Text("Jump to Live") }
             }
             Button(
-                onClick = actions.onClear,
+                onClick = onClear,
                 enabled = state.committed.isNotEmpty() || state.currentCaption.isNotBlank(),
             ) {
                 Text("Clear")
@@ -108,7 +105,6 @@ private fun readerHeader(
 }
 
 private fun androidx.compose.foundation.lazy.LazyListState.isAtLiveEdge(itemCount: Int): Boolean {
-    if (itemCount == 0) return true
-    val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return true
-    return lastVisible >= itemCount - 1
+    val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+    return itemCount == 0 || lastVisible == null || lastVisible >= itemCount - 1
 }
